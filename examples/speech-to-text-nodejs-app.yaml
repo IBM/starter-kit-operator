@@ -1,0 +1,42 @@
+apiVersion: ibmcloud.ibm.com/v1alpha1
+kind: Service
+metadata:
+  name: stt-service
+spec:
+  plan: lite
+  serviceClass: speech-to-text
+---
+apiVersion: ibmcloud.ibm.com/v1alpha1
+kind: Binding
+metadata:
+  name: stt-binding
+spec:
+  serviceName: stt-service
+---
+apiVersion: devx.ibm.com/v1alpha1
+kind: StarterKit
+metadata:
+  name: stt-app
+spec:
+  templateRepo:
+    templateOwner: IBM
+    templateRepoName: speech-to-text-code-pattern
+    name: stt-app
+    owner: <OWNER>
+    repoDescription: example code pattern
+    secretKeyRef:
+      name: <NAME>
+      key: <KEY>
+  options:
+    port: 5000
+    env:
+    - name: SPEECH_TO_TEXT_URL
+      valueFrom:
+        secretKeyRef:
+          name: stt-binding
+          key: url
+    - name: SPEECH_TO_TEXT_APIKEY
+      valueFrom:
+        secretKeyRef:
+          name: stt-binding
+          key: apikey

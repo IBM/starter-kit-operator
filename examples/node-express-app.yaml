@@ -1,0 +1,14 @@
+apiVersion: devx.ibm.com/v1alpha1
+kind: StarterKit
+metadata:
+  name: nodejs-express-app
+spec:
+  templateRepo:
+    templateOwner: IBM
+    templateRepoName: nodejs-express-app
+    name: nodejs-express-app
+    owner: <OWNER>
+    repoDescription: example code pattern
+    secretKeyRef:
+      name: <NAME>
+      key: <KEY>
