@@ -26,8 +26,8 @@ metadata:
     capabilities: Basic Install
     categories: Cloud Provider
     certified: 'false'
-    containerImage: jmeis/starter-kit-operator:0.1.1
-    createdAt: '2020-06-17T21:30:05Z'
+    containerImage: jmeis/starter-kit-operator:0.1.0
+    createdAt: '2020-06-24T21:30:05Z'
     description: The IBM Cloud Starter Kit Operator provides a simple OpenShift CRD-Based API that abstracts lower-level core Kubernetes and OpenShift APIs
        to simplify starter kit deployment.
     repository: https://github.com/IBM/starter-kit-operator
@@ -215,7 +215,7 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: "starter-kit-operator"
-                image: jmeis/starter-kit-operator:0.1.1
+                image: jmeis/starter-kit-operator:0.1.0
                 imagePullPolicy: Always
                 name: devx-controllers
               serviceAccountName: starter-kit-operator
