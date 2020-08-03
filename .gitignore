@@ -1,4 +1,4 @@
 .DS_Store
 .vscode
-build/bin
+build/_test
 build/_output
