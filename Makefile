@@ -5,31 +5,27 @@ NAMESPACE=starterkit
 ##@ Application
 
 install: ## Install all resources (CR/CRD's, RBAC and Operator)
-	@echo ....... Creating namespace ....... 
-	- kubectl create namespace ${NAMESPACE}
+	@echo Switching to project ${NAMESPACE}
+	- oc project ${NAMESPACE}
 	@echo ....... Applying CRDs .......
-	- kubectl apply -f deploy/crds/devx.ibm.com_starterkits_crd.yaml -n ${NAMESPACE}
+	- oc apply -f deploy/crds/devx.ibm.com_starterkits_crd.yaml
 	@echo ....... Applying Rules and Service Account .......
-	- kubectl apply -f deploy/role.yaml -n ${NAMESPACE}
-	- kubectl apply -f deploy/role_binding.yaml  -n ${NAMESPACE}
-	- kubectl apply -f deploy/service_account.yaml  -n ${NAMESPACE}
+	- oc apply -f deploy/role.yaml
+	- oc apply -f deploy/role_binding.yaml
+	- oc apply -f deploy/service_account.yaml
 	@echo ....... Applying Operator .......
-	- kubectl apply -f deploy/operator.yaml -n ${NAMESPACE}
-	@echo ....... Creating the CRs .......
-	- kubectl apply -f deploy/crds/devx.ibm.com_v1alpha1_starterkit_cr.yaml -n ${NAMESPACE}
+	- oc apply -f deploy/operator.yaml
 
 uninstall: ## Uninstall all that all performed in the $ make install
 	@echo ....... Uninstalling .......
 	@echo ....... Deleting CRDs.......
-	- kubectl delete -f deploy/crds/devx.ibm.com_starterkits_crd.yaml -n ${NAMESPACE}
+	- oc delete -f deploy/crds/devx.ibm.com_starterkits_crd.yaml
 	@echo ....... Deleting Rules and Service Account .......
-	- kubectl delete -f deploy/role.yaml -n ${NAMESPACE}
-	- kubectl delete -f deploy/role_binding.yaml -n ${NAMESPACE}
-	- kubectl delete -f deploy/service_account.yaml -n ${NAMESPACE}
+	- oc delete -f deploy/role.yaml
+	- oc delete -f deploy/role_binding.yaml
+	- oc delete -f deploy/service_account.yaml
 	@echo ....... Deleting Operator .......
-	- kubectl delete -f deploy/operator.yaml -n ${NAMESPACE}
-	@echo ....... Deleting namespace ${NAMESPACE}.......
-	- kubectl delete namespace ${NAMESPACE}
+	- oc delete -f deploy/operator.yaml
 
 ##@ Development
 
@@ -55,21 +51,25 @@ code-gen: ## Run the operator-sdk commands to generated code (k8s and openapi)
 
 ##@ Tests
 
-test-e2e: ## Run integration e2e tests with different options.
-	@echo ... Running the same e2e tests with different args ...
-	@echo ... Running locally ...
-	- kubectl create namespace ${NAMESPACE} || true
-	- operator-sdk test local ./test/e2e --up-local --namespace=${NAMESPACE}
-	@echo ... Running NOT in parallel ...
-	- operator-sdk test local ./test/e2e --go-test-flags "-v -parallel=1"
-	@echo ... Running in parallel ...
-	- operator-sdk test local ./test/e2e --go-test-flags "-v -parallel=2"
-	@echo ... Running without options/args ...
-	- operator-sdk test local ./test/e2e
-	@echo ... Running with the --debug param ...
-	- operator-sdk test local ./test/e2e --debug
-	@echo ... Running with the --verbose param ...
-	- operator-sdk test local ./test/e2e --verbose
+test-unit: ## Run unit tests
+	@echo Running unit tests
+	go test ./pkg/controller/starterkit
+
+# test-e2e: ## Run integration e2e tests with different options.
+# 	@echo ... Running the same e2e tests with different args ...
+# 	@echo ... Running locally ...
+# 	- kubectl create namespace ${NAMESPACE} || true
+# 	- operator-sdk test local ./test/e2e --up-local --namespace=${NAMESPACE}
+# 	@echo ... Running NOT in parallel ...
+# 	- operator-sdk test local ./test/e2e --go-test-flags "-v -parallel=1"
+# 	@echo ... Running in parallel ...
+# 	- operator-sdk test local ./test/e2e --go-test-flags "-v -parallel=2"
+# 	@echo ... Running without options/args ...
+# 	- operator-sdk test local ./test/e2e
+# 	@echo ... Running with the --debug param ...
+# 	- operator-sdk test local ./test/e2e --debug
+# 	@echo ... Running with the --verbose param ...
+# 	- operator-sdk test local ./test/e2e --verbose
 
 .PHONY: help
 help: ## Display this help

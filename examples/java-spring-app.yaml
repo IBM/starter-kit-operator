@@ -1,16 +1,16 @@
 apiVersion: devx.ibm.com/v1alpha1
 kind: StarterKit
 metadata:
-  name: java-spring app
+  name: java-spring-app
 spec:
   templateRepo:
     templateOwner: IBM
     templateRepoName: java-spring-app
     name: java-spring-app
-    owner: <OWNER>
+    owner: gee4vee
     repoDescription: example code pattern
     secretKeyRef:
-      name: <NAME>
-      key: <KEY>
+      name: gabe-skit-operator
+      key: apikey
   options:
     port: 8080

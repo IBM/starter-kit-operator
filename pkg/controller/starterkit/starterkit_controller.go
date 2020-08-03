@@ -144,13 +144,16 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
+			reqLogger.Info("StarterKit not found")
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
+		reqLogger.Info("StarterKit reconcile error")
 		return reconcile.Result{}, err
 	}
 
 	// Fetch public API URL
+	reqLogger.Info("Fetching k8s API URL")
 	kubernetesApiURL := &configv1.Infrastructure{}
 	infrastructureName := &types.NamespacedName{
 		Name: "cluster",
@@ -161,15 +164,18 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
+			reqLogger.Info("Infrastructure not found")
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
+		reqLogger.Info("Infrastructure error")
 		return reconcile.Result{}, err
 	}
 	kubernetesApiURLValue := kubernetesApiURL.Status.APIServerURL
 	reqLogger.Info("Found Kubernetes public URL", "kubernetesApiURL", kubernetesApiURLValue)
 
 	// Fetch GitHub secret
+	reqLogger.Info("Fetching GitHub secret")
 	githubTokenSecret := &corev1.Secret{}
 	secretNamespaceName := &types.NamespacedName{
 		Namespace: request.Namespace,
@@ -190,6 +196,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 	githubTokenValue := string(githubTokenSecret.Data[instance.Spec.TemplateRepo.SecretKeyRef.Key])
 
 	// Initialize GitHub Client
+	reqLogger.Info("Initializing GitHub client")
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: githubTokenValue},
 	)
@@ -198,6 +205,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 	client := github.NewClient(tc)
 
 	// Read starter kit specification
+	reqLogger.Info("Reading starter kit specification")
 	if instance.Status.TargetRepo == "" {
 		// Create a repo
 		req := github.TemplateRepoRequest{
@@ -221,6 +229,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	// Create ImageStream
+	reqLogger.Info("Configuring ImageStream")
 	image := newImageStreamForCR(instance)
 
 	// Set StarterKit instance as the owner and controller
@@ -248,6 +257,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	// Create Route
+	reqLogger.Info("Configuring Route")
 	route := newRouteForCR(instance)
 
 	// Set StarterKit instance as the owner and controller
@@ -275,6 +285,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	// Create Service
+	reqLogger.Info("Configuring Service")
 	service := newServiceForCR(instance)
 
 	// Set StarterKit instance as the owner and controller
@@ -302,6 +313,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	// Create Secret
+	reqLogger.Info("Configuring CR Secret")
 	token, err := GenerateRandomString(32)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -333,6 +345,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	// Create BuildConfig
+	reqLogger.Info("Configuring BuildConfig")
 	build := newBuildForCR(instance)
 
 	// Set StarterKit instance as the owner and controller
@@ -392,6 +405,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	// Create Deployment
+	reqLogger.Info("Configuring Deployment")
 	deployment := newDeploymentForCR(instance)
 
 	// Set StarterKit instance as the owner and controller
