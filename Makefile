@@ -4,6 +4,12 @@ NAMESPACE=starterkit
 
 ##@ Application
 
+install-local: ## Install resources needed to run the operator locally
+	@echo Switching to project ${NAMESPACE}
+	- oc project ${NAMESPACE}
+	@echo ....... Applying CRDs .......
+	- oc apply -f deploy/crds/devx.ibm.com_starterkits_crd.yaml
+
 install: ## Install all resources (CR/CRD's, RBAC and Operator)
 	@echo Switching to project ${NAMESPACE}
 	- oc project ${NAMESPACE}

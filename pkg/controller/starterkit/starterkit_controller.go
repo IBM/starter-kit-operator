@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"os"
 
 	appsv1 "github.com/openshift/api/apps/v1"
 	buildv1 "github.com/openshift/api/build/v1"
@@ -145,10 +146,16 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
 			reqLogger.Info("StarterKit not found")
+			// if we're running in development mode, cleanup the github repo if present
+			if devxDevMode, ok := os.LookupEnv("DEVX_DEV_MODE"); ok {
+				if devxDevMode == "true" {
+
+				}
+			}
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		reqLogger.Info("StarterKit reconcile error")
+		reqLogger.Info("StarterKit error")
 		return reconcile.Result{}, err
 	}
 
