@@ -2,6 +2,7 @@ go 1.13
 
 require (
 	github.com/go-delve/delve v1.5.0 // indirect
+	github.com/go-logr/logr v0.1.0
 	github.com/go-openapi/spec v0.19.4
 	github.com/google/go-github/v32 v32.0.0
 	github.com/mattn/go-colorable v0.1.7 // indirect

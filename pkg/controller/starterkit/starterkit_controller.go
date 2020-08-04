@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -137,7 +138,7 @@ const starterkitFinalizer = "finalizer.devx.ibm.com"
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling Starte=rKit")
+	reqLogger.Info("Reconciling StarterKit")
 	ctx := context.Background()
 	// Fetch the StarterKit instance
 	instance := &devxv1alpha1.StarterKit{}
@@ -434,74 +435,81 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 		// Deployment already exists - don't requeue
 		reqLogger.Info("Skip reconcile: Deployment already exists", "Deployment.Namespace", foundDeployment.Namespace, "Deployment.Name", foundDeployment.Name)
 	}
-	
+
 	// Check if the StarterKit instance is marked to be deleted, which is
-    // indicated by the deletion timestamp being set.
-    isMarkedToBeDeleted := instance.GetDeletionTimestamp() != nil
-    if isMarkedToBeDeleted {
-        if contains(instance.GetFinalizers(), starterkitFinalizer) {
-            // Run finalization logic for starterkitFinalizer. If the
-            // finalization logic fails, don't remove the finalizer so
-            // that we can retry during the next reconciliation.
-            if err := r.finalizeStarterKit(reqLogger, instance); err != nil {
-                return reconcile.Result{}, err
-            }
+	// indicated by the deletion timestamp being set.
+	isMarkedToBeDeleted := instance.GetDeletionTimestamp() != nil
+	if isMarkedToBeDeleted {
+		if contains(instance.GetFinalizers(), starterkitFinalizer) {
+			// Run finalization logic for starterkitFinalizer. If the
+			// finalization logic fails, don't remove the finalizer so
+			// that we can retry during the next reconciliation.
+			if err := r.finalizeStarterKit(reqLogger, request, instance, client); err != nil {
+				return reconcile.Result{}, err
+			}
 
-            // Remove starterkitFinalizer. Once all finalizers have been
-            // removed, the object will be deleted.
-            controllerutil.RemoveFinalizer(instance, starterkitFinalizer)
-            err := r.Update(ctx, instance)
-            if err != nil {
-                return reconcile.Result{}, err
-            }
-        }
-        return reconcile.Result{}, nil
-    }
+			// Remove starterkitFinalizer. Once all finalizers have been
+			// removed, the object will be deleted.
+			controllerutil.RemoveFinalizer(instance, starterkitFinalizer)
+			err := r.client.Update(ctx, instance)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+		return reconcile.Result{}, nil
+	}
 
-    // Add finalizer for this CR
-    if !contains(instance.GetFinalizers(), starterkitFinalizer) {
+	// Add finalizer for this CR
+	if !contains(instance.GetFinalizers(), starterkitFinalizer) {
 		reqLogger.Info("Adding finalizer to starterkit")
-        if err := r.addFinalizer(reqLogger, instance); err != nil {
-            return reconcile.Result{}, err
-        }
-    } else {
+		if err := r.addFinalizer(reqLogger, instance); err != nil {
+			return reconcile.Result{}, err
+		}
+	} else {
 		reqLogger.Info("Starterkit already has finalizer")
-    }
+	}
 
 	return reconcile.Result{}, nil
 }
 
 func contains(list []string, s string) bool {
-    for _, v := range list {
-        if v == s {
-            return true
-        }
-    }
-    return false
+	for _, v := range list {
+		if v == s {
+			return true
+		}
+	}
+	return false
 }
 
-func (r *ReconcileStarterKit) addFinalizer(reqLogger logf.Logger, s *devxv1alpha1.StarterKit) error {
-    reqLogger.Info("Adding Finalizer for the StarterKit")
-    controllerutil.AddFinalizer(s, starterkitFinalizer)
+func (r *ReconcileStarterKit) addFinalizer(reqLogger logr.Logger, s *devxv1alpha1.StarterKit) error {
+	reqLogger.Info("Adding Finalizer for the StarterKit")
+	controllerutil.AddFinalizer(s, starterkitFinalizer)
 
-    // Update CR
-    err := r.Update(context.TODO(), s)
-    if err != nil {
-        reqLogger.Error(err, "Failed to update StarterKit with finalizer")
-        return err
-    }
-    return nil
+	// Update CR
+	err := r.client.Update(context.TODO(), s)
+	if err != nil {
+		reqLogger.Error(err, "Failed to update StarterKit with finalizer")
+		return err
+	}
+	return nil
 }
 
-func (r *ReconcileStarterKit) finalizeStarterKit(reqLogger logf.Logger, s *devxv1alpha1.StarterKit) error {
+func (r *ReconcileStarterKit) finalizeStarterKit(reqLogger logr.Logger, request reconcile.Request, s *devxv1alpha1.StarterKit, githubClient *github.Client) error {
 	// if we're running in development mode, cleanup the github repo if present
+	ctx := context.Background()
 	if devxDevMode, ok := os.LookupEnv("DEVX_DEV_MODE"); ok {
 		if devxDevMode == "true" {
 			reqLogger.Info("Running in development mode")
+			reqLogger.Info("Deleting target GitHub repo", "TargetRepo", s.Status.TargetRepo)
+			// note that this requires the GitHub access token to have admin or delete_repo rights
+			_, err := githubClient.Repositories.Delete(ctx, s.Spec.TemplateRepo.Owner, s.Spec.TemplateRepo.Name)
+			if err != nil {
+				return err
+			}
 		}
 	}
-    reqLogger.Info("Successfully finalized starterkit")
-    return nil
+	reqLogger.Info("Successfully finalized starterkit")
+	return nil
 }
 
 // Create a new Secret
