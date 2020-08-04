@@ -137,7 +137,7 @@ const starterkitFinalizer = "finalizer.devx.ibm.com"
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling StarterKit")
+	reqLogger.Info("Reconciling Starte=rKit")
 	ctx := context.Background()
 	// Fetch the StarterKit instance
 	instance := &devxv1alpha1.StarterKit{}
@@ -480,9 +480,9 @@ func contains(list []string, s string) bool {
     return false
 }
 
-func (r *ReconcileStarterKit) addFinalizer(reqLogger logr.Logger, s *devxv1alpha1.StarterKit) error {
+func (r *ReconcileStarterKit) addFinalizer(reqLogger logf.Logger, s *devxv1alpha1.StarterKit) error {
     reqLogger.Info("Adding Finalizer for the StarterKit")
-    controllerutil.AddFinalizer(s, finalizeStarterKit)
+    controllerutil.AddFinalizer(s, starterkitFinalizer)
 
     // Update CR
     err := r.Update(context.TODO(), s)
@@ -493,7 +493,7 @@ func (r *ReconcileStarterKit) addFinalizer(reqLogger logr.Logger, s *devxv1alpha
     return nil
 }
 
-func (r *ReconcileStarterKit) finalizeStarterKit(reqLogger logr.Logger, s *devxv1alpha1.StarterKit) error {
+func (r *ReconcileStarterKit) finalizeStarterKit(reqLogger logf.Logger, s *devxv1alpha1.StarterKit) error {
 	// if we're running in development mode, cleanup the github repo if present
 	if devxDevMode, ok := os.LookupEnv("DEVX_DEV_MODE"); ok {
 		if devxDevMode == "true" {
