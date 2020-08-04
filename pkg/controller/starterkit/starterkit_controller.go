@@ -138,10 +138,10 @@ const starterkitFinalizer = "finalizer.devx.ibm.com"
 func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	reqLogger.Info("Reconciling StarterKit")
-
+	ctx := context.Background()
 	// Fetch the StarterKit instance
 	instance := &devxv1alpha1.StarterKit{}
-	err := r.client.Get(context.Background(), request.NamespacedName, instance)
+	err := r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -161,7 +161,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 	infrastructureName := &types.NamespacedName{
 		Name: "cluster",
 	}
-	err = r.client.Get(context.Background(), *infrastructureName, kubernetesApiURL)
+	err = r.client.Get(ctx, *infrastructureName, kubernetesApiURL)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -184,7 +184,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 		Namespace: request.Namespace,
 		Name:      instance.Spec.TemplateRepo.SecretKeyRef.Name,
 	}
-	err = r.client.Get(context.Background(), *secretNamespaceName, githubTokenSecret)
+	err = r.client.Get(ctx, *secretNamespaceName, githubTokenSecret)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -203,7 +203,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: githubTokenValue},
 	)
-	tc := oauth2.NewClient(context.Background(), ts)
+	tc := oauth2.NewClient(ctx, ts)
 
 	client := github.NewClient(tc)
 
@@ -217,7 +217,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 			Description: &instance.Spec.TemplateRepo.Description,
 		}
 
-		createdRepo, _, err := client.Repositories.CreateFromTemplate(context.Background(), instance.Spec.TemplateRepo.TemplateOwner, instance.Spec.TemplateRepo.TemplateRepoName, &req)
+		createdRepo, _, err := client.Repositories.CreateFromTemplate(ctx, instance.Spec.TemplateRepo.TemplateOwner, instance.Spec.TemplateRepo.TemplateRepoName, &req)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -226,7 +226,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 		// Set the TargetRepo to the repo created
 		instance.Status.TargetRepo = *createdRepo.HTMLURL
 
-		if err := r.client.Status().Update(context.Background(), instance); err != nil {
+		if err := r.client.Status().Update(ctx, instance); err != nil {
 			return reconcile.Result{}, err
 		}
 	}
@@ -242,10 +242,10 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 
 	// Check if this Image already exists
 	foundImage := &imagev1.ImageStream{}
-	err = r.client.Get(context.Background(), types.NamespacedName{Name: image.Name, Namespace: image.Namespace}, foundImage)
+	err = r.client.Get(ctx, types.NamespacedName{Name: image.Name, Namespace: image.Namespace}, foundImage)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new Image", "Image.Namespace", image.Namespace, "Image.Name", image.Name)
-		err = r.client.Create(context.Background(), image)
+		err = r.client.Create(ctx, image)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -270,10 +270,10 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 
 	// Check if this Route already exists
 	foundRoute := &routev1.Route{}
-	err = r.client.Get(context.Background(), types.NamespacedName{Name: route.Name, Namespace: route.Namespace}, foundRoute)
+	err = r.client.Get(ctx, types.NamespacedName{Name: route.Name, Namespace: route.Namespace}, foundRoute)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new Route", "Route.Namespace", route.Namespace, "Route.Name", route.Name)
-		err = r.client.Create(context.Background(), route)
+		err = r.client.Create(ctx, route)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -298,10 +298,10 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 
 	// Check if this Service already exists
 	foundService := &corev1.Service{}
-	err = r.client.Get(context.Background(), types.NamespacedName{Name: service.Name, Namespace: service.Namespace}, foundService)
+	err = r.client.Get(ctx, types.NamespacedName{Name: service.Name, Namespace: service.Namespace}, foundService)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new Service", "Service.Namespace", service.Namespace, "Service.Name", service.Name)
-		err = r.client.Create(context.Background(), service)
+		err = r.client.Create(ctx, service)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -330,10 +330,10 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 
 	// Check if this Secret already exists
 	foundSecret := &corev1.Secret{}
-	err = r.client.Get(context.Background(), types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace}, foundSecret)
+	err = r.client.Get(ctx, types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace}, foundSecret)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
-		err = r.client.Create(context.Background(), secret)
+		err = r.client.Create(ctx, secret)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -359,10 +359,10 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 	// Check if this Build already exists
 	foundBuild := &buildv1.BuildConfig{}
 
-	err = r.client.Get(context.Background(), types.NamespacedName{Name: build.Name, Namespace: build.Namespace}, foundBuild)
+	err = r.client.Get(ctx, types.NamespacedName{Name: build.Name, Namespace: build.Namespace}, foundBuild)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new Build", "Build.Namespace", build.Namespace, "Build.Name", build.Name)
-		err = r.client.Create(context.Background(), build)
+		err = r.client.Create(ctx, build)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -395,7 +395,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 			Events: []string{"push"},
 		}
 
-		createdHook, _, err := client.Repositories.CreateHook(context.Background(), instance.Spec.TemplateRepo.Owner, instance.Spec.TemplateRepo.Name, &hook)
+		createdHook, _, err := client.Repositories.CreateHook(ctx, instance.Spec.TemplateRepo.Owner, instance.Spec.TemplateRepo.Name, &hook)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -418,10 +418,10 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 
 	// Check if this Deployment already exists
 	foundDeployment := &appsv1.DeploymentConfig{}
-	err = r.client.Get(context.Background(), types.NamespacedName{Name: deployment.Name, Namespace: deployment.Namespace}, foundDeployment)
+	err = r.client.Get(ctx, types.NamespacedName{Name: deployment.Name, Namespace: deployment.Namespace}, foundDeployment)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new Deployment", "Deployment.Namespace", deployment.Namespace, "Deployment.Name", deployment.Name)
-		err = r.client.Create(context.Background(), deployment)
+		err = r.client.Create(ctx, deployment)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -444,25 +444,25 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
             // finalization logic fails, don't remove the finalizer so
             // that we can retry during the next reconciliation.
             if err := r.finalizeStarterKit(reqLogger, instance); err != nil {
-                return ctrl.Result{}, err
+                return reconcile.Result{}, err
             }
 
             // Remove starterkitFinalizer. Once all finalizers have been
             // removed, the object will be deleted.
             controllerutil.RemoveFinalizer(instance, starterkitFinalizer)
-            err := r.Update(ctx, memcached)
+            err := r.Update(ctx, instance)
             if err != nil {
-                return ctrl.Result{}, err
+                return reconcile.Result{}, err
             }
         }
-        return ctrl.Result{}, nil
+        return reconcile.Result{}, nil
     }
 
     // Add finalizer for this CR
     if !contains(instance.GetFinalizers(), starterkitFinalizer) {
 		reqLogger.Info("Adding finalizer to starterkit")
         if err := r.addFinalizer(reqLogger, instance); err != nil {
-            return ctrl.Result{}, err
+            return reconcile.Result{}, err
         }
     } else {
 		reqLogger.Info("Starterkit already has finalizer")
