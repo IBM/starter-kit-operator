@@ -65,16 +65,20 @@ func TestStarterKitController(t *testing.T) {
 		},
 	}
 
-	// Objects to track in the fake client.
-	objs := []runtime.Object{
-		starterkit,
-	}
-
 	// Register operator types with the runtime scheme.
 	kubernetesAPIURL := &configv1.Infrastructure{}
 	imgStream := &imagev1.ImageStream{}
+
+	// Objects to track in the fake client.
+	objs := []runtime.Object{
+		starterkit,
+		kubernetesAPIURL,
+		imgStream,
+	}
+	
 	s := scheme.Scheme
 	s.AddKnownTypes(devxv1alpha1.SchemeGroupVersion, starterkit, kubernetesAPIURL, imgStream)
+	
 	// Create a fake client to mock API calls.
 	cl := fake.NewFakeClient(objs...)
 	// Create a ReconcileStarterKit object with the scheme and fake client.
