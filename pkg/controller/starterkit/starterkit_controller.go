@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"os"
 
+	"github.com/go-logr/logr"
 	appsv1 "github.com/openshift/api/apps/v1"
 	buildv1 "github.com/openshift/api/build/v1"
 	configv1 "github.com/openshift/api/config/v1"
@@ -31,7 +32,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -158,11 +158,11 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 
 	// Fetch public API URL
 	reqLogger.Info("Fetching k8s API URL")
-	kubernetesApiURL := &configv1.Infrastructure{}
+	kubernetesAPIURL := &configv1.Infrastructure{}
 	infrastructureName := &types.NamespacedName{
 		Name: "cluster",
 	}
-	err = r.client.Get(ctx, *infrastructureName, kubernetesApiURL)
+	err = r.client.Get(ctx, *infrastructureName, kubernetesAPIURL)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -175,8 +175,8 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 		reqLogger.Info("Infrastructure error")
 		return reconcile.Result{}, err
 	}
-	kubernetesApiURLValue := kubernetesApiURL.Status.APIServerURL
-	reqLogger.Info("Found Kubernetes public URL", "kubernetesApiURL", kubernetesApiURLValue)
+	kubernetesAPIURLValue := kubernetesAPIURL.Status.APIServerURL
+	reqLogger.Info("Found Kubernetes public URL", "kubernetesAPIURL", kubernetesAPIURLValue)
 
 	// Fetch GitHub secret
 	reqLogger.Info("Fetching GitHub secret")
@@ -209,7 +209,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 	client := github.NewClient(tc)
 
 	// Read starter kit specification
-	reqLogger.Info("Reading starter kit specification")
+	reqLogger.Info("Reading StarterKit specification")
 	if instance.Status.TargetRepo == "" {
 		// Create a repo
 		req := github.TemplateRepoRequest{
@@ -373,7 +373,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 
 		// Create webhook
 		cfg := config.GetConfigOrDie()
-		cfg.Host = kubernetesApiURLValue
+		cfg.Host = kubernetesAPIURLValue
 		cfg.APIPath = "/apis"
 		cfg.ContentConfig.GroupVersion = &buildv1.SchemeGroupVersion
 		cfg.ContentConfig.NegotiatedSerializer = legacyscheme.Codecs
@@ -461,12 +461,12 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 
 	// Add finalizer for this CR
 	if !contains(instance.GetFinalizers(), starterkitFinalizer) {
-		reqLogger.Info("Adding finalizer to starterkit")
+		reqLogger.Info("Adding finalizer to StarterKit")
 		if err := r.addFinalizer(reqLogger, instance); err != nil {
 			return reconcile.Result{}, err
 		}
 	} else {
-		reqLogger.Info("Starterkit already has finalizer")
+		reqLogger.Info("StarterKit already has finalizer")
 	}
 
 	return reconcile.Result{}, nil
@@ -481,6 +481,8 @@ func contains(list []string, s string) bool {
 	return false
 }
 
+// Adds the 'finalizeStarterKit' finalizer to the specified StarterKit. The finalizer is responsible for additional cleanup when
+// deleting a StarterKit.
 func (r *ReconcileStarterKit) addFinalizer(reqLogger logr.Logger, s *devxv1alpha1.StarterKit) error {
 	reqLogger.Info("Adding Finalizer for the StarterKit")
 	controllerutil.AddFinalizer(s, starterkitFinalizer)
@@ -494,6 +496,8 @@ func (r *ReconcileStarterKit) addFinalizer(reqLogger logr.Logger, s *devxv1alpha
 	return nil
 }
 
+// Finalizer that runs during Reconcile() if the StarterKit has been marked for deletion.
+// This function performs additional cleanup, namely deleting the created GitHub repo if the DEVX_DEV_MODE environment variable is set to 'true'.
 func (r *ReconcileStarterKit) finalizeStarterKit(reqLogger logr.Logger, request reconcile.Request, s *devxv1alpha1.StarterKit, githubClient *github.Client) error {
 	// if we're running in development mode, cleanup the github repo if present
 	ctx := context.Background()
@@ -508,7 +512,7 @@ func (r *ReconcileStarterKit) finalizeStarterKit(reqLogger logr.Logger, request 
 			}
 		}
 	}
-	reqLogger.Info("Successfully finalized starterkit")
+	reqLogger.Info("Successfully finalized StarterKit")
 	return nil
 }
 

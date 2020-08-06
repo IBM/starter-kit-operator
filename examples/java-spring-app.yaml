@@ -7,7 +7,7 @@ spec:
     templateOwner: IBM
     templateRepoName: java-spring-app
     name: java-spring-app
-    owner: gee4vee
+    owner: <OWNER>
     repoDescription: example code pattern
     secretKeyRef:
       name: gabe-skit-operator

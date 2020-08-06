@@ -1,20 +1,12 @@
 go 1.13
 
 require (
-	github.com/go-delve/delve v1.5.0 // indirect
 	github.com/go-logr/logr v0.1.0
 	github.com/go-openapi/spec v0.19.4
 	github.com/google/go-github/v32 v32.0.0
-	github.com/mattn/go-colorable v0.1.7 // indirect
-	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/openshift/api v3.9.1-0.20191217101959-25e6c5c55d58+incompatible
 	github.com/operator-framework/operator-sdk v0.16.0
-	github.com/peterh/liner v1.2.0 // indirect
-	github.com/russross/blackfriday v2.0.0+incompatible // indirect
-	github.com/spf13/cobra v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.5
-	go.starlark.net v0.0.0-20200723213555-f21d2f77688f // indirect
-	golang.org/x/arch v0.0.0-20200511175325-f7c78586839d // indirect
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/sys v0.0.0-20200803150936-fd5f0c170ac3 // indirect
 	gopkg.in/yaml.v2 v2.3.0 // indirect
