@@ -13,9 +13,11 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	imagev1 "github.com/openshift/api/image/v1"
 	routev1 "github.com/openshift/api/route/v1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	intstr "k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -38,7 +40,7 @@ func TestStarterKitController(t *testing.T) {
 	secretKeyRef := corev1.SecretKeySelector{
 		Key: "apikey",
 		LocalObjectReference: corev1.LocalObjectReference{
-			Name: "slack",
+			Name: "devx-test-secret",
 		},
 	}
 	skitOptions := devxv1alpha1.StarterKitSpecOptions{
@@ -66,19 +68,104 @@ func TestStarterKitController(t *testing.T) {
 	}
 
 	// Register operator types with the runtime scheme.
-	kubernetesAPIURL := &configv1.Infrastructure{}
-	imgStream := &imagev1.ImageStream{}
+	kubernetesAPIURL := &configv1.Infrastructure{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cluster",
+			Namespace: "default",
+		},
+		Status: configv1.InfrastructureStatus{
+			APIServerURL: "https://my-cluster",
+		},
+	}
+
+	labels := map[string]string{
+		"app": starterkit.Name,
+	}
+	imgStream := &imagev1.ImageStream{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ImageStream",
+			APIVersion: "github.com/openshift/api/image/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      starterkit.Name,
+			Namespace: starterkit.Namespace,
+			Labels:    labels,
+		},
+	}
+
+	route := &routev1.Route{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Route",
+			APIVersion: "github.com/openshift/api/route/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      starterkit.Name,
+			Namespace: starterkit.Namespace,
+			Labels:    labels,
+		},
+		Spec: routev1.RouteSpec{
+			To: routev1.RouteTargetReference{
+				Kind: "Service",
+				Name: starterkit.Name,
+			},
+		},
+	}
+
+	selector := map[string]string{
+		"name": starterkit.Name,
+	}
+	port := int32(3000)
+	if starterkit.Spec.Options.Port > 0 {
+		port = starterkit.Spec.Options.Port
+	}
+	ser := &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "k8s.io/api/core/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      starterkit.Name,
+			Namespace: starterkit.Namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "web",
+					Port:       port,
+					TargetPort: intstr.FromInt(int(port)),
+				},
+			},
+			Selector: selector,
+		},
+	}
+
+	secret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "k8s.io/api/core/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      starterkit.Spec.TemplateRepo.SecretKeyRef.Name,
+			Namespace: starterkit.Namespace,
+			Labels:    labels,
+		},
+	}
 
 	// Objects to track in the fake client.
 	objs := []runtime.Object{
 		starterkit,
 		kubernetesAPIURL,
 		imgStream,
+		route,
+		ser,
+		secret,
 	}
-	
+
 	s := scheme.Scheme
-	s.AddKnownTypes(devxv1alpha1.SchemeGroupVersion, starterkit, kubernetesAPIURL, imgStream)
-	
+	// dont add types like service and secret or you'll get an error because they're already present
+	s.AddKnownTypes(devxv1alpha1.SchemeGroupVersion, starterkit, kubernetesAPIURL, imgStream, route)
+
 	// Create a fake client to mock API calls.
 	cl := fake.NewFakeClient(objs...)
 	// Create a ReconcileStarterKit object with the scheme and fake client.
@@ -92,7 +179,7 @@ func TestStarterKitController(t *testing.T) {
 			Namespace: namespace,
 		},
 	}
-	res, err := r.Reconcile(req)
+	res, err := r.Reconcile(req) // TODO: currently this is failing due to GitHub repo creation that can't be mocked
 	if err != nil {
 		t.Fatalf("reconcile: (%v)", err)
 	}
@@ -108,21 +195,18 @@ func TestStarterKitController(t *testing.T) {
 	}
 
 	// Check for Route
-	route := &routev1.Route{}
 	err = cl.Get(context.TODO(), req.NamespacedName, route)
 	if err != nil {
 		t.Fatalf("get route: (%v)", err)
 	}
 
 	// Check if Service has been created.
-	ser := &corev1.Service{}
 	err = cl.Get(context.TODO(), req.NamespacedName, ser)
 	if err != nil {
 		t.Fatalf("get service: (%v)", err)
 	}
 
 	// Check for Secret
-	secret := &corev1.Secret{}
 	err = cl.Get(context.TODO(), req.NamespacedName, secret)
 	if err != nil {
 		t.Fatalf("get secret: (%v)", err)
