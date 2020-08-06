@@ -1,7 +1,7 @@
 apiVersion: devx.ibm.com/v1alpha1
 kind: StarterKit
 metadata:
-  name: java-spring app
+  name: java-spring-app
 spec:
   templateRepo:
     templateOwner: IBM
