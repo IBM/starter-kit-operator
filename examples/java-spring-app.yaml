@@ -10,7 +10,7 @@ spec:
     owner: <OWNER>
     repoDescription: example code pattern
     secretKeyRef:
-      name: gabe-skit-operator
-      key: apikey
+      name: <NAME>
+      key: <KEY>
   options:
     port: 8080
