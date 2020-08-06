@@ -1,6 +1,12 @@
 .DEFAULT_GOAL:=help
 SHELL:=/bin/bash
 NAMESPACE=starterkit
+SKIT=java-spring-app.yaml
+SKIT_NAME=java-spring-app
+SKIT_OWNER=gh-username
+SKIT_DESCRIPTION=example code pattern
+SKIT_SECRET_KEY_REF_NAME=my-github-token
+SKIT_SECRET_KEY_REF_KEY=apikey
 
 ##@ Application
 
@@ -32,6 +38,18 @@ uninstall: ## Uninstall all that all performed in the $ make install
 	- oc delete -f deploy/service_account.yaml
 	@echo ....... Deleting Operator .......
 	- oc delete -f deploy/operator.yaml
+
+run-local: ## Run the operator locally
+	@echo ....... Starting the operator with namespace ${NAMESPACE} .......
+	- operator-sdk run local --watch-namespace ${NAMESPACE}
+
+install-skit: ## Install a starter kit from the examples folder. Requires the yq command line tool.
+	@echo ....... Installing examples/${SKIT} .......
+	- yq w examples/${SKIT} "spec.templateRepo.name" "${SKIT_NAME}" | yq w - "spec.templateRepo.owner" "${SKIT_OWNER}" | yq w - "spec.templateRepo.repoDescription" "${SKIT_DESCRIPTION}" | yq w - "spec.templateRepo.secretKeyRef.name" "${SKIT_SECRET_KEY_REF_NAME}" | yq w - "spec.templateRepo.secretKeyRef.key" "${SKIT_SECRET_KEY_REF_KEY}" | oc apply -f - 
+
+delete-skit: ## Deletes a starter kit defined in the examples folder.
+	@echo ....... Deleting examples/${SKIT} .......
+	- oc delete -f examples/${SKIT}
 
 ##@ Development
 
