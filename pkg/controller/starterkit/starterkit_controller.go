@@ -179,21 +179,23 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 	reqLogger.Info("Found Kubernetes public URL", "kubernetesAPIURL", kubernetesAPIURLValue)
 
 	// Fetch GitHub secret
-	reqLogger.Info("Fetching GitHub secret")
 	githubTokenSecret := &corev1.Secret{}
 	secretNamespaceName := &types.NamespacedName{
 		Namespace: request.Namespace,
 		Name:      instance.Spec.TemplateRepo.SecretKeyRef.Name,
 	}
+	reqLogger.Info("Fetching GitHub secret")
 	err = r.client.Get(ctx, *secretNamespaceName, githubTokenSecret)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
+			reqLogger.Info("GitHub secret not found", "SecretKeyRef.Name", instance.Spec.TemplateRepo.SecretKeyRef.Name)
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
+		reqLogger.Info("GitHub secret error")
 		return reconcile.Result{}, err
 	}
 

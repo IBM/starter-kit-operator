@@ -1,5 +1,7 @@
 .DEFAULT_GOAL:=help
 SHELL:=/bin/bash
+
+## These can passed as NAME=VALUE pairs to the make command to change them
 NAMESPACE=starterkit
 SKIT=java-spring-app.yaml
 SKIT_NAME=java-spring-app
@@ -7,28 +9,38 @@ SKIT_OWNER=gh-username
 SKIT_DESCRIPTION=example code pattern
 SKIT_SECRET_KEY_REF_NAME=my-github-token
 SKIT_SECRET_KEY_REF_KEY=apikey
+SKIT_DEPLOYMENT_IMAGE=jmeis/starter-kit-operator:0.1.0
 
 ##@ Application
 
-install-local: ## Install resources needed to run the operator locally
+build-image: ## Build and push the operator image. Parameters: NAMESPACE, SKIT_DEPLOYMENT_IMAGE
+	@echo Switching to project ${NAMESPACE}
+	- oc project ${NAMESPACE}
+	@ echo Building image
+	- operator-sdk build "${SKIT_DEPLOYMENT_IMAGE}"
+	- docker push "${SKIT_DEPLOYMENT_IMAGE}"
+
+install-local: ## Install resources needed to run the operator locally. Parameters: NAMESPACE
 	@echo Switching to project ${NAMESPACE}
 	- oc project ${NAMESPACE}
 	@echo ....... Applying CRDs .......
 	- oc apply -f deploy/crds/devx.ibm.com_starterkits_crd.yaml
 
-install: ## Install all resources (CR/CRD's, RBAC and Operator)
+install: ## Install all resources for deployment (CR/CRD's, RBAC and Operator). Requires the yq commandline tool.  Parameters: NAMESPACE, SKIT_DEPLOYMENT_IMAGE
 	@echo Switching to project ${NAMESPACE}
 	- oc project ${NAMESPACE}
 	@echo ....... Applying CRDs .......
 	- oc apply -f deploy/crds/devx.ibm.com_starterkits_crd.yaml
 	@echo ....... Applying Rules and Service Account .......
 	- oc apply -f deploy/role.yaml
-	- oc apply -f deploy/role_binding.yaml
+	- yq w deploy/role_binding.yaml "subjects[0].namespace" "${NAMESPACE}" | oc apply -f - 
 	- oc apply -f deploy/service_account.yaml
 	@echo ....... Applying Operator .......
-	- oc apply -f deploy/operator.yaml
+	- yq w deploy/operator.yaml "spec.template.spec.containers[0].image" "${SKIT_DEPLOYMENT_IMAGE}" | oc apply -f - 
 
-uninstall: ## Uninstall all that all performed in the $ make install
+uninstall: ## Uninstall all that are performed in the install. Parameters: NAMESPACE
+	@echo Switching to project ${NAMESPACE}
+	- oc project ${NAMESPACE}
 	@echo ....... Uninstalling .......
 	@echo ....... Deleting CRDs.......
 	- oc delete -f deploy/crds/devx.ibm.com_starterkits_crd.yaml
@@ -39,15 +51,17 @@ uninstall: ## Uninstall all that all performed in the $ make install
 	@echo ....... Deleting Operator .......
 	- oc delete -f deploy/operator.yaml
 
-run-local: ## Run the operator locally
+run-local: ## Run the operator locally. Parameters: NAMESPACE
 	@echo ....... Starting the operator with namespace ${NAMESPACE} .......
 	- operator-sdk run local --watch-namespace ${NAMESPACE}
 
-install-skit: ## Install a starter kit from the examples folder. Requires the yq command line tool.
+install-skit: ## Install a starter kit from the examples folder. Requires the yq command line tool. Parameters: NAMESPACE, SKIT, SKIT_NAME, SKIT_OWNER, SKIT_DESCRIPTION, SKIT_SECRET_KEY_REF_NAME, SKIT_SECRET_KEY_REF_KEY
+	@echo Switching to project ${NAMESPACE}
+	- oc project ${NAMESPACE}
 	@echo ....... Installing examples/${SKIT} .......
 	- yq w examples/${SKIT} "spec.templateRepo.name" "${SKIT_NAME}" | yq w - "spec.templateRepo.owner" "${SKIT_OWNER}" | yq w - "spec.templateRepo.repoDescription" "${SKIT_DESCRIPTION}" | yq w - "spec.templateRepo.secretKeyRef.name" "${SKIT_SECRET_KEY_REF_NAME}" | yq w - "spec.templateRepo.secretKeyRef.key" "${SKIT_SECRET_KEY_REF_KEY}" | oc apply -f - 
 
-delete-skit: ## Deletes a starter kit defined in the examples folder.
+delete-skit: ## Deletes a starter kit defined in the examples folder. Parameters: SKIT
 	@echo ....... Deleting examples/${SKIT} .......
 	- oc delete -f examples/${SKIT}
 
