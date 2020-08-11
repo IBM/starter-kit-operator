@@ -22,7 +22,6 @@ import (
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
 
 	"github.com/google/go-github/v32/github"
-	"golang.org/x/oauth2"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -190,13 +189,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	// Initialize GitHub Client
-	reqLogger.Info("Initializing GitHub client")
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: *githubTokenValue},
-	)
-	tc := oauth2.NewClient(ctx, ts)
-
-	client := github.NewClient(tc)
+	client := r.getGitHubClient(githubTokenValue, reqLogger)
 
 	// Read starter kit specification
 	reqLogger.Info("Reading StarterKit specification")

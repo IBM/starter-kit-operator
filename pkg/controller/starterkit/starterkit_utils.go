@@ -10,6 +10,7 @@ import (
 	buildv1 "github.com/openshift/api/build/v1"
 	imagev1 "github.com/openshift/api/image/v1"
 	routev1 "github.com/openshift/api/route/v1"
+	"golang.org/x/oauth2"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	devxv1alpha1 "github.com/ibm/starter-kit-operator/pkg/apis/devx/v1alpha1"
@@ -18,6 +19,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	intstr "k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/google/go-github/v32/github"
 )
 
 func (r *ReconcileStarterKit) fetchGitHubSecret(skit *devxv1alpha1.StarterKit, request *reconcile.Request, reqLogger logr.Logger) (*string, error) {
@@ -44,6 +47,18 @@ func (r *ReconcileStarterKit) fetchGitHubSecret(skit *devxv1alpha1.StarterKit, r
 
 	githubTokenValue := string(githubTokenSecret.Data[skit.Spec.TemplateRepo.SecretKeyRef.Key])
 	return &githubTokenValue, nil
+}
+
+func (r *ReconcileStarterKit) getGitHubClient(githubTokenValue *string, reqLogger logr.Logger) *github.Client {
+	reqLogger.Info("Initializing GitHub client")
+	ctx := context.Background()
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: *githubTokenValue},
+	)
+	tc := oauth2.NewClient(ctx, ts)
+
+	client := github.NewClient(tc)
+	return client
 }
 
 // Create a new Secret

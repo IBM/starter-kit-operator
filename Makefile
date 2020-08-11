@@ -61,7 +61,9 @@ install-skit: ## Install a starter kit from the examples folder. Requires the yq
 	@echo ....... Installing examples/${SKIT} .......
 	- yq w examples/${SKIT} "spec.templateRepo.name" "${SKIT_NAME}" | yq w - "spec.templateRepo.owner" "${SKIT_OWNER}" | yq w - "spec.templateRepo.repoDescription" "${SKIT_DESCRIPTION}" | yq w - "spec.templateRepo.secretKeyRef.name" "${SKIT_SECRET_KEY_REF_NAME}" | yq w - "spec.templateRepo.secretKeyRef.key" "${SKIT_SECRET_KEY_REF_KEY}" | oc apply -f - 
 
-delete-skit: ## Deletes a starter kit defined in the examples folder. Parameters: SKIT
+delete-skit: ## Deletes a starter kit defined in the examples folder. Parameters: NAMESPACE, SKIT
+	@echo Switching to project ${NAMESPACE}
+	- oc project ${NAMESPACE}
 	@echo ....... Deleting examples/${SKIT} .......
 	- oc delete -f examples/${SKIT}
 
