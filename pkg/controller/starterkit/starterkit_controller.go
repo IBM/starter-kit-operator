@@ -147,7 +147,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		reqLogger.Info("StarterKit error")
+		reqLogger.Error(err, "Error reading StarterKit")
 		return reconcile.Result{}, err
 	}
 
@@ -167,7 +167,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		reqLogger.Info("Infrastructure error")
+		reqLogger.Error(err, "Error reading Infrastructure")
 		return reconcile.Result{}, err
 	}
 	kubernetesAPIURLValue := kubernetesAPIURL.Status.APIServerURL
@@ -184,7 +184,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		reqLogger.Info("GitHub secret error")
+		reqLogger.Error(err, "Error fetching GitHub secret")
 		return reconcile.Result{}, err
 	}
 
@@ -193,26 +193,10 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 
 	// Read starter kit specification
 	reqLogger.Info("Reading StarterKit specification")
-	if instance.Status.TargetRepo == "" {
-		// Create a repo
-		req := github.TemplateRepoRequest{
-			Name:        &instance.Spec.TemplateRepo.Name,
-			Owner:       &instance.Spec.TemplateRepo.Owner,
-			Description: &instance.Spec.TemplateRepo.Description,
-		}
-
-		createdRepo, _, err := client.Repositories.CreateFromTemplate(ctx, instance.Spec.TemplateRepo.TemplateOwner, instance.Spec.TemplateRepo.TemplateRepoName, &req)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-		reqLogger.Info("Repo created successfully", "GitHub URL", *createdRepo.HTMLURL)
-
-		// Set the TargetRepo to the repo created
-		instance.Status.TargetRepo = *createdRepo.HTMLURL
-
-		if err := r.client.Status().Update(ctx, instance); err != nil {
-			return reconcile.Result{}, err
-		}
+	err = r.createTargetGitHubRepo(client, instance, reqLogger)
+	if err != nil {
+		reqLogger.Error(err, "Error creating target GitHub repo")
+		return reconcile.Result{}, err
 	}
 
 	// Create ImageStream
@@ -221,6 +205,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 
 	// Set StarterKit instance as the owner and controller
 	if err := controllerutil.SetControllerReference(instance, image, r.scheme); err != nil {
+		reqLogger.Error(err, "Error setting ImageStream on StarterKit")
 		return reconcile.Result{}, err
 	}
 
@@ -231,12 +216,14 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 		reqLogger.Info("Creating a new Image", "Image.Namespace", image.Namespace, "Image.Name", image.Name)
 		err = r.client.Create(ctx, image)
 		if err != nil {
+			reqLogger.Error(err, "Error creating ImageStream")
 			return reconcile.Result{}, err
 		}
 
 		// Image created successfully
 		reqLogger.Info("Image created successfully")
 	} else if err != nil {
+		reqLogger.Error(err, "Error fetching ImageStream")
 		return reconcile.Result{}, err
 	} else {
 		// Image already exists - don't requeue
@@ -249,6 +236,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 
 	// Set StarterKit instance as the owner and controller
 	if err := controllerutil.SetControllerReference(instance, route, r.scheme); err != nil {
+		reqLogger.Error(err, "Error setting Route on StarterKit")
 		return reconcile.Result{}, err
 	}
 
@@ -259,12 +247,14 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 		reqLogger.Info("Creating a new Route", "Route.Namespace", route.Namespace, "Route.Name", route.Name)
 		err = r.client.Create(ctx, route)
 		if err != nil {
+			reqLogger.Error(err, "Error creating Route")
 			return reconcile.Result{}, err
 		}
 
 		// Route created successfully
 		reqLogger.Info("Route created successfully")
 	} else if err != nil {
+		reqLogger.Error(err, "Error fetching Route")
 		return reconcile.Result{}, err
 	} else {
 		// Route already exists - don't requeue
@@ -277,6 +267,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 
 	// Set StarterKit instance as the owner and controller
 	if err := controllerutil.SetControllerReference(instance, service, r.scheme); err != nil {
+		reqLogger.Error(err, "Error setting Service on StarterKit")
 		return reconcile.Result{}, err
 	}
 
@@ -287,12 +278,14 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 		reqLogger.Info("Creating a new Service", "Service.Namespace", service.Namespace, "Service.Name", service.Name)
 		err = r.client.Create(ctx, service)
 		if err != nil {
+			reqLogger.Error(err, "Error creating Service")
 			return reconcile.Result{}, err
 		}
 
 		// Service created successfully
 		reqLogger.Info("Service created successfully")
 	} else if err != nil {
+		reqLogger.Error(err, "Error fetching Service")
 		return reconcile.Result{}, err
 	} else {
 		// Service already exists - don't requeue
@@ -303,12 +296,14 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 	reqLogger.Info("Configuring CR Secret")
 	token, err := GenerateRandomString(32)
 	if err != nil {
+		reqLogger.Error(err, "Error creating random string")
 		return reconcile.Result{}, err
 	}
 	secret := newSecretForCR(instance, token)
 
 	// Set StarterKit instance as the owner and controller
 	if err := controllerutil.SetControllerReference(instance, secret, r.scheme); err != nil {
+		reqLogger.Error(err, "Error setting Secret on StarterKit")
 		return reconcile.Result{}, err
 	}
 
@@ -319,12 +314,14 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 		reqLogger.Info("Creating a new Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
 		err = r.client.Create(ctx, secret)
 		if err != nil {
+			reqLogger.Error(err, "Error creating Secret")
 			return reconcile.Result{}, err
 		}
 
 		// Secret created successfully
 		reqLogger.Info("Secret created successfully")
 	} else if err != nil {
+		reqLogger.Error(err, "Error fetching Secret")
 		return reconcile.Result{}, err
 	} else {
 		// Secret already exists - don't requeue
@@ -337,17 +334,18 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 
 	// Set StarterKit instance as the owner and controller
 	if err := controllerutil.SetControllerReference(instance, build, r.scheme); err != nil {
+		reqLogger.Error(err, "Error setting BuildConfig on StarterKit")
 		return reconcile.Result{}, err
 	}
 
 	// Check if this Build already exists
 	foundBuild := &buildv1.BuildConfig{}
-
 	err = r.client.Get(ctx, types.NamespacedName{Name: build.Name, Namespace: build.Namespace}, foundBuild)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new Build", "Build.Namespace", build.Namespace, "Build.Name", build.Name)
 		err = r.client.Create(ctx, build)
 		if err != nil {
+			reqLogger.Info("Error creating new Build")
 			return reconcile.Result{}, err
 		}
 
@@ -385,6 +383,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 		}
 		reqLogger.Info("Webhook created successfully", "Hook URL", *createdHook.URL)
 	} else if err != nil {
+		reqLogger.Error(err, "Error fetching Build")
 		return reconcile.Result{}, err
 	} else {
 		// Build already exists - don't requeue
@@ -397,6 +396,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 
 	// Set StarterKit instance as the owner and controller
 	if err := controllerutil.SetControllerReference(instance, deployment, r.scheme); err != nil {
+		reqLogger.Error(err, "Error setting Deployment on StarterKit")
 		return reconcile.Result{}, err
 	}
 
@@ -407,12 +407,14 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 		reqLogger.Info("Creating a new Deployment", "Deployment.Namespace", deployment.Namespace, "Deployment.Name", deployment.Name)
 		err = r.client.Create(ctx, deployment)
 		if err != nil {
+			reqLogger.Info("Error creating new DeploymentConfig")
 			return reconcile.Result{}, err
 		}
 
 		// Deployment created successfully
 		reqLogger.Info("Deployment created successfully")
 	} else if err != nil {
+		reqLogger.Error(err, "Error fetching DeploymentConfig")
 		return reconcile.Result{}, err
 	} else {
 		// Deployment already exists - don't requeue

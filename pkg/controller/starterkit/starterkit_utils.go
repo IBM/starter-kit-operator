@@ -23,6 +23,7 @@ import (
 	"github.com/google/go-github/v32/github"
 )
 
+// Returns the GitHub secret defined in the specified StarterKit.
 func (r *ReconcileStarterKit) fetchGitHubSecret(skit *devxv1alpha1.StarterKit, request *reconcile.Request, reqLogger logr.Logger) (*string, error) {
 	ctx := context.Background()
 	githubTokenSecret := &corev1.Secret{}
@@ -49,6 +50,7 @@ func (r *ReconcileStarterKit) fetchGitHubSecret(skit *devxv1alpha1.StarterKit, r
 	return &githubTokenValue, nil
 }
 
+// Returns a GitHub Client that can be used to make GitHub API calls.
 func (r *ReconcileStarterKit) getGitHubClient(githubTokenValue *string, reqLogger logr.Logger) *github.Client {
 	reqLogger.Info("Initializing GitHub client")
 	ctx := context.Background()
@@ -59,6 +61,35 @@ func (r *ReconcileStarterKit) getGitHubClient(githubTokenValue *string, reqLogge
 
 	client := github.NewClient(tc)
 	return client
+}
+
+// Creates and sets the target GitHub repo defined in the specified StarterKit if it has not been previously created and set on the StarterKit.
+func (r *ReconcileStarterKit) createTargetGitHubRepo(client *github.Client, skit *devxv1alpha1.StarterKit, reqLogger logr.Logger) error {
+	ctx := context.Background()
+	if skit.Status.TargetRepo == "" {
+		// Create a repo
+		req := github.TemplateRepoRequest{
+			Name:        &skit.Spec.TemplateRepo.Name,
+			Owner:       &skit.Spec.TemplateRepo.Owner,
+			Description: &skit.Spec.TemplateRepo.Description,
+		}
+
+		createdRepo, _, err := client.Repositories.CreateFromTemplate(ctx, skit.Spec.TemplateRepo.TemplateOwner, skit.Spec.TemplateRepo.TemplateRepoName, &req)
+		if err != nil {
+			return err
+		}
+		reqLogger.Info("Repo created successfully", "GitHub URL", *createdRepo.HTMLURL)
+
+		// Set the TargetRepo to the repo created
+		skit.Status.TargetRepo = *createdRepo.HTMLURL
+
+		if err := r.client.Status().Update(ctx, skit); err != nil {
+			return err
+		}
+
+		return nil
+	}
+	return nil
 }
 
 // Create a new Secret
