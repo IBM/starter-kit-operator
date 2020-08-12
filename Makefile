@@ -91,9 +91,9 @@ code-gen: ## Run the operator-sdk commands to generated code (k8s and openapi)
 
 ##@ Tests
 
-test-unit: ## Run unit tests
-	@echo Running unit tests
-	go test ./pkg/controller/starterkit
+# test-unit: ## Run unit tests
+# 	@echo Running unit tests
+# 	go test ./pkg/controller/starterkit
 
 # test-e2e: ## Run integration e2e tests with different options.
 # 	@echo ... Running the same e2e tests with different args ...
