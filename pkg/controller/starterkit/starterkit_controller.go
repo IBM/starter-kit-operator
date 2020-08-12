@@ -457,15 +457,6 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 	return reconcile.Result{}, nil
 }
 
-func contains(list []string, s string) bool {
-	for _, v := range list {
-		if v == s {
-			return true
-		}
-	}
-	return false
-}
-
 // Adds the 'finalizeStarterKit' finalizer to the specified StarterKit. The finalizer is responsible for additional cleanup when
 // deleting a StarterKit.
 func (r *ReconcileStarterKit) addFinalizer(reqLogger logr.Logger, s *devxv1alpha1.StarterKit) error {
