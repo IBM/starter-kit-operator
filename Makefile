@@ -55,6 +55,13 @@ run-local: ## Run the operator locally. Parameters: NAMESPACE
 	@echo ....... Starting the operator with namespace ${NAMESPACE} .......
 	- operator-sdk run local --watch-namespace ${NAMESPACE}
 
+run-debug: ## Run the operator locally in debug mode (enable-delve option). Parameters: NAMESPACE
+	# make sure you install github.com/go-delve/delve
+	# add a 'Go: attach to process' debug config to your launch.json for vscode
+	# run the operator with run-debug and run the vscode attach debugger
+	@echo ....... Starting the operator in debug mode with namespace ${NAMESPACE} .......
+	- operator-sdk run local --watch-namespace ${NAMESPACE} --enable-delve
+
 install-skit: ## Install a starter kit from the examples folder. Requires the yq command line tool. Parameters: NAMESPACE, SKIT, SKIT_NAME, SKIT_OWNER, SKIT_DESCRIPTION, SKIT_SECRET_KEY_REF_NAME, SKIT_SECRET_KEY_REF_KEY
 	@echo Switching to project ${NAMESPACE}
 	- oc project ${NAMESPACE}
