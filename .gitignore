@@ -2,3 +2,4 @@
 .vscode
 build/_test
 build/_output
+vendor/
