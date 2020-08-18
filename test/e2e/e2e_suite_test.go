@@ -10,8 +10,6 @@ import (
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 
-	devxv1alpha1 "github.com/ibm/starter-kit-operator/pkg/apis/devx/v1alpha1"
-
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -33,7 +31,9 @@ var log = logf.Log.WithName("controller_starterkit")
 func TestE2e(t *testing.T) {
 	RegisterFailHandler(Fail)
 	junitReporter := reporters.NewJUnitReporter(fmt.Sprintf("../TEST-ginkgo-junit_%d.xml", config.GinkgoConfig.ParallelNode))
-	RunSpecs(t, "E2e Suite")
+	RunSpecsWithDefaultAndCustomReporters(t,
+		"Controller Suite",
+		[]Reporter{envtest.NewlineReporter{}, junitReporter})
 }
 
 var _ = BeforeSuite(func(done Done) {
@@ -44,6 +44,7 @@ var _ = BeforeSuite(func(done Done) {
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
 		UseExistingCluster:       &useCluster,
+		CRDDirectoryPaths: []string{"deploy/crds"},
 		AttachControlPlaneOutput: true,
 	}
 
