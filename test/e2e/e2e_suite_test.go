@@ -1,9 +1,9 @@
 package e2e_test
 
 import (
-	"testing"
 	"flag"
 	"fmt"
+	"testing"
 
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
@@ -19,6 +19,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/google/go-github/v32/github"
+
+	"github.com/operator-framework/operator-sdk/pkg/test"
 )
 
 var cfg *rest.Config
@@ -27,6 +29,10 @@ var k8sManager ctrl.Manager
 var ghClient *github.Client
 var testEnv *envtest.Environment
 var log = logf.Log.WithName("controller_starterkit")
+
+func TestMain(m *testing.M) {
+	test.MainEntry(m)
+}
 
 func TestE2e(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -44,7 +50,7 @@ var _ = BeforeSuite(func(done Done) {
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
 		UseExistingCluster:       &useCluster,
-		CRDDirectoryPaths: []string{"deploy/crds"},
+		CRDDirectoryPaths:        []string{"deploy/crds"},
 		AttachControlPlaneOutput: true,
 	}
 
@@ -63,7 +69,7 @@ var _ = BeforeSuite(func(done Done) {
 	metricsPort := 8090 + config.GinkgoConfig.ParallelNode
 	flag.StringVar(&metricsAddr, "metrics-addr", fmt.Sprintf(":%d", metricsPort), "The address the metric endpoint binds to.")
 	flag.Parse()
-	
+
 	k8sManager, err = ctrl.NewManager(cfg, ctrl.Options{
 		Scheme:             scheme.Scheme,
 		MetricsBindAddress: metricsAddr,
@@ -80,10 +86,10 @@ var _ = BeforeSuite(func(done Done) {
 		}).SetupWithManager(k8sManager)
 		Expect(err).ToNot(HaveOccurred())
 	*/
-	  
+
 	err = k8sManager.Start(ctrl.SetupSignalHandler())
 	Expect(err).ToNot(HaveOccurred())
-	
+
 	k8sClient = k8sManager.GetClient()
 	Expect(k8sClient).ToNot(BeNil())
 
