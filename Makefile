@@ -10,6 +10,7 @@ SKIT_DESCRIPTION=example code pattern
 SKIT_SECRET_KEY_REF_NAME=my-github-token
 SKIT_SECRET_KEY_REF_KEY=apikey
 SKIT_DEPLOYMENT_IMAGE=jmeis/starter-kit-operator:0.1.0
+KUBE_API_SERVER_HOST=https://my-cluster.com
 
 ##@ Application
 
@@ -117,6 +118,11 @@ code-gen: ## Run the operator-sdk commands to generated code (k8s and openapi)
 # 	- operator-sdk test local ./test/e2e --debug
 # 	@echo ... Running with the --verbose param ...
 # 	- operator-sdk test local ./test/e2e --verbose
+
+run-swagger-ui:
+	@echo Starting Swagger UI against cluster API server ${KUBE_API_SERVER_HOST}
+	# swagger generate server -f ./swaggerui/swagger.yaml
+	swagger serve ./swaggerui/swagger.yaml
 
 .PHONY: help
 help: ## Display this help

@@ -1,0 +1,19 @@
+swagger: "2.0"
+info:
+  title: Starter Kit Operator
+  description: API description in Markdown.
+  version: 1.0.0
+host: ${KUBE_API_SERVER_HOST}
+basePath: /apis/devx.ibm.com/v1alpha1
+schemes:
+  - https
+paths:
+  /starterkits:
+    get:
+      summary: Return all installed starter kits.
+      description: Optional extended description in Markdown.
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK
