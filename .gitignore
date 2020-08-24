@@ -2,3 +2,5 @@
 .vscode
 build/_test
 build/_output
+swagger-user.yaml
+vendor

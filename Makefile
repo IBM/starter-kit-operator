@@ -122,7 +122,8 @@ code-gen: ## Run the operator-sdk commands to generated code (k8s and openapi)
 run-swagger-ui:
 	@echo Starting Swagger UI against cluster API server ${KUBE_API_SERVER_HOST}
 	# swagger generate server -f ./swaggerui/swagger.yaml
-	swagger serve ./swaggerui/swagger.yaml
+	yq w ./swaggerui/swagger.yaml "host" ${KUBE_API_SERVER_HOST} > ./swaggerui/swagger-user.yaml
+	swagger serve ./swaggerui/swagger-user.yaml -F swagger
 
 .PHONY: help
 help: ## Display this help

@@ -3,17 +3,26 @@ info:
   title: Starter Kit Operator
   description: API description in Markdown.
   version: 1.0.0
-host: ${KUBE_API_SERVER_HOST}
+host: my-cluster-host
 basePath: /apis/devx.ibm.com/v1alpha1
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header
+security:
+  - Bearer: []
 schemes:
   - https
 paths:
   /starterkits:
     get:
       summary: Return all installed starter kits.
-      description: Optional extended description in Markdown.
+      description: Returns a StarterKitList.
       produces:
         - application/json
       responses:
         200:
           description: OK
+        403:
+          description: Unauthorized
