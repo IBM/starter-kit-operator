@@ -4,8 +4,11 @@ require (
 	github.com/go-logr/logr v0.1.0
 	github.com/go-openapi/spec v0.19.4
 	github.com/google/go-github/v32 v32.0.0
+	github.com/gorilla/mux v1.7.1
 	github.com/openshift/api v3.9.1-0.20191217101959-25e6c5c55d58+incompatible
 	github.com/operator-framework/operator-sdk v0.16.0
+	github.com/rakyll/statik v0.1.7
+	github.com/ribice/golang-swaggerui-example v0.0.0-20180611180427-1e7622a30e50
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/sys v0.0.0-20200803150936-fd5f0c170ac3 // indirect
