@@ -17,7 +17,7 @@ schemes:
 paths:
   /starterkits:
     get:
-      summary: Return all installed starter kits in all namespaces.
+      summary: Return all starter kits located in all namespaces.
       tags:
         - Starter Kit Operations
       description: Returns a StarterKitList.
@@ -28,16 +28,43 @@ paths:
           description: OK
         403:
           description: Unauthorized
-  /starterkit:
-    put:
+  /namespaces/{namespace}/starterkits:
+    get:
+      summary: Return all installed starter kits located in a specific namespace.
+      tags:
+        - Starter Kit Operations
+      description: Returns a StarterKitList.
+      parameters:
+        - in: path
+          name: namespace
+          schema:
+            type: string
+            default: default
+          required: true
+          description: Namespace where the starter kit is located.
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK
+        403:
+          description: Unauthorized
+    post:
       summary: Creates a starter kit.
       tags:
         - Starter Kit Operations
       consumes:
-        - text/plain  
+        - application/yaml
       parameters:
+        - in: path
+          name: namespace
+          schema:
+            type: string
+            default: default
+          required: true
+          description: Namespace where the starter kit will be located.
         - in: body
-          name: status
+          name: body
           required: true
           schema:
             type: string  
