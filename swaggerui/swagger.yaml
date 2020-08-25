@@ -103,3 +103,64 @@ paths:
           description: OK
         403:
           description: Unauthorized
+    put:
+      summary: Replace the specified StarterKit.
+      tags:
+        - Starter Kit Operations
+      description: Replace the specified StarterKit.
+      parameters:
+        - in: path
+          name: namespace
+          schema:
+            type: string
+            default: default
+          required: true
+          description: Namespace where the starter kit is located.
+        - in: path
+          name: name
+          schema:
+            type: string
+            default: java-spring-app
+          required: true
+          description: The name of the starter kit.
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: \#/definitions/com.ibm.devx.v1alpha1.StarterKit
+      produces:
+        - application/json
+        - application/yaml
+      responses:
+        200:
+          description: OK
+        403:
+          description: Unauthorized
+  /namespaces/{namespace}/starterkits/{name}/status:
+    get:
+      summary: read status of the specified StarterKit.
+      tags:
+        - Starter Kit Operations
+      description: read status of the specified StarterKit.
+      parameters:
+        - in: path
+          name: namespace
+          schema:
+            type: string
+            default: default
+          required: true
+          description: Namespace where the starter kit is located.
+        - in: path
+          name: name
+          schema:
+            type: string
+            default: java-spring-app
+          required: true
+          description: The name of the starter kit.
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK
+        403:
+          description: Unauthorized
