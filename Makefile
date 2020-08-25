@@ -53,6 +53,8 @@ uninstall: ## Uninstall all that are performed in the install. Parameters: NAMES
 	- oc delete -f deploy/operator.yaml
 
 run-local: ## Run the operator locally. Parameters: NAMESPACE
+	@echo Switching to project ${NAMESPACE}
+	- oc project ${NAMESPACE}
 	@echo ....... Starting the operator with namespace ${NAMESPACE} .......
 	- operator-sdk run local --watch-namespace ${NAMESPACE}
 
@@ -61,19 +63,21 @@ run-debug: ## Run the operator locally in debug mode (enable-delve option). Para
 	# add a 'Go: attach to process' debug config to your launch.json for vscode
 	# run the operator with run-debug and run the vscode attach debugger
 	@echo ....... Starting the operator in debug mode with namespace ${NAMESPACE} .......
+	@echo Switching to project ${NAMESPACE}
+	- oc project ${NAMESPACE}
 	- operator-sdk run local --watch-namespace ${NAMESPACE} --enable-delve
 
 install-skit: ## Install a starter kit from the examples folder. Requires the yq command line tool. Parameters: NAMESPACE, SKIT, SKIT_NAME, SKIT_OWNER, SKIT_DESCRIPTION, SKIT_SECRET_KEY_REF_NAME, SKIT_SECRET_KEY_REF_KEY
 	@echo Switching to project ${NAMESPACE}
 	- oc project ${NAMESPACE}
 	@echo ....... Installing examples/${SKIT} .......
-	- yq w examples/${SKIT} "spec.templateRepo.name" "${SKIT_NAME}" | yq w - "spec.templateRepo.owner" "${SKIT_OWNER}" | yq w - "spec.templateRepo.repoDescription" "${SKIT_DESCRIPTION}" | yq w - "spec.templateRepo.secretKeyRef.name" "${SKIT_SECRET_KEY_REF_NAME}" | yq w - "spec.templateRepo.secretKeyRef.key" "${SKIT_SECRET_KEY_REF_KEY}" | oc apply -f - 
+	- yq w examples/${SKIT} "spec.templateRepo.name" "${SKIT_NAME}" | yq w - "metadata.name" "${SKIT_NAME}" | yq w - "spec.templateRepo.owner" "${SKIT_OWNER}" | yq w - "spec.templateRepo.repoDescription" "${SKIT_DESCRIPTION}" | yq w - "spec.templateRepo.secretKeyRef.name" "${SKIT_SECRET_KEY_REF_NAME}" | yq w - "spec.templateRepo.secretKeyRef.key" "${SKIT_SECRET_KEY_REF_KEY}" | oc apply -f - 
 
-delete-skit: ## Deletes a starter kit defined in the examples folder. Parameters: NAMESPACE, SKIT
+delete-skit: ## Deletes a starter kit defined in the examples folder. Requires the yq command line tool. Make sure to use the same SKIT_NAME you used to create it. Parameters: NAMESPACE, SKIT, SKIT_NAME
 	@echo Switching to project ${NAMESPACE}
 	- oc project ${NAMESPACE}
-	@echo ....... Deleting examples/${SKIT} .......
-	- oc delete -f examples/${SKIT}
+	@echo ....... Deleting examples/${SKIT} with name ${SKIT_NAME} .......
+	- yq w examples/${SKIT} "metadata.name" "${SKIT_NAME}" | oc delete -f -
 
 ##@ Development
 
