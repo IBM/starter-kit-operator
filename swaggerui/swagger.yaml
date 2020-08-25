@@ -17,7 +17,9 @@ schemes:
 paths:
   /starterkits:
     get:
-      summary: Return all installed starter kits.
+      summary: Return all installed starter kits in all namespaces.
+      tags:
+        - Starter Kit Operations
       description: Returns a StarterKitList.
       produces:
         - application/json
@@ -28,7 +30,9 @@ paths:
           description: Unauthorized
   /starterkit:
     put:
-      summary: Updates the status message.
+      summary: Creates a starter kit.
+      tags:
+        - Starter Kit Operations
       consumes:
         - text/plain  
       parameters:
@@ -37,6 +41,34 @@ paths:
           required: true
           schema:
             type: string  
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK
+        403:
+          description: Unauthorized
+  /namespaces/{namespace}/starterkits/{name}:
+    get:
+      summary: Returns starter kit information.
+      tags:
+        - Starter Kit Operations
+      description: Returns details about a starter kit.
+      parameters:
+        - in: path
+          name: namespace
+          schema:
+            type: string
+            default: default
+          required: true
+          description: Namespace where the starter kit is located.
+        - in: path
+          name: name
+          schema:
+            type: string
+            default: java-spring-app
+          required: true
+          description: The name of the starter kit.
       produces:
         - application/json
       responses:
