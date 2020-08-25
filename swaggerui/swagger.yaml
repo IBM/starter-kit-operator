@@ -26,3 +26,21 @@ paths:
           description: OK
         403:
           description: Unauthorized
+  /starterkit:
+    put:
+      summary: Updates the status message.
+      consumes:
+        - text/plain  
+      parameters:
+        - in: body
+          name: status
+          required: true
+          schema:
+            type: string  
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK
+        403:
+          description: Unauthorized
