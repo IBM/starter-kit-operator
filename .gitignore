@@ -5,3 +5,4 @@ build/_output
 swagger-user.yaml
 vendor
 cluster-openapi-v2.json
+notes.txt
