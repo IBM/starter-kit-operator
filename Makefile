@@ -11,6 +11,8 @@ SKIT_SECRET_KEY_REF_NAME=my-github-token
 SKIT_SECRET_KEY_REF_KEY=apikey
 SKIT_DEPLOYMENT_IMAGE=jmeis/starter-kit-operator:0.1.0
 KUBE_API_SERVER_HOST=https://my-cluster.com
+TLS_CERT_FILE=/path/to/my-ca.cert.pem
+TLS_KEY_FILE=/path/to-my-ca.key.pem
 
 ##@ Application
 
@@ -123,11 +125,16 @@ code-gen: ## Run the operator-sdk commands to generated code (k8s and openapi)
 # 	@echo ... Running with the --verbose param ...
 # 	- operator-sdk test local ./test/e2e --verbose
 
-run-swagger-ui:
+run-swagger-ui: ## Run a local server hosting a Swagger UI page that can perform operations on Starter Kits. Requires the yq and go-swagger tools. Parameters: KUBE_API_SERVER_HOST
 	@echo Starting Swagger UI against cluster API server ${KUBE_API_SERVER_HOST}
-	# swagger generate server -f ./swaggerui/swagger.yaml
-	yq w ./swaggerui/swagger.yaml "host" ${KUBE_API_SERVER_HOST} > ./swaggerui/swagger-user.yaml
-	swagger serve ./swaggerui/swagger-user.yaml -F swagger
+	yq w ./swaggerui/swagger-template.yaml "host" ${KUBE_API_SERVER_HOST} > ./swaggerui/swagger.yaml
+	swagger serve ./swaggerui/swagger.yaml -F swagger
+
+build-swagger-ui: ## Build a server binary that hosts a Swagger UI page that can perform operations on Starter Kits. Requires the yq and go-swagger tools. Parameters: KUBE_API_SERVER_HOST, TLS_CERT_FILE, TLS_KEY_FILE
+	@echo Building Swagger UI against cluster API server ${KUBE_API_SERVER_HOST}
+	yq w ./swaggerui/swagger-template.yaml "host" ${KUBE_API_SERVER_HOST} > ./swaggerui/swagger.yaml
+	go build ./swaggerui/cmd/starter-kit-operator-server
+	./starter-kit-operator-server --tls-certificate ${TLS_CERT_FILE} --tls-key ${TLS_KEY_FILE}
 
 .PHONY: help
 help: ## Display this help

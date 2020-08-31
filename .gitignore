@@ -2,7 +2,8 @@
 .vscode
 build/_test
 build/_output
-swagger-user.yaml
+swagger.yaml
 vendor
 cluster-openapi-v2.json
 notes.txt
+/starter-kit-operator-server
