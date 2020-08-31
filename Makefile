@@ -10,7 +10,7 @@ SKIT_DESCRIPTION=example code pattern
 SKIT_SECRET_KEY_REF_NAME=my-github-token
 SKIT_SECRET_KEY_REF_KEY=apikey
 SKIT_DEPLOYMENT_IMAGE=jmeis/starter-kit-operator:0.1.0
-KUBE_API_SERVER_HOST=https://my-cluster.com
+KUBE_API_SERVER_HOST=c100-e.us-south.containers.cloud.ibm.com:31360
 TLS_CERT_FILE=/path/to/my-ca.cert.pem
 TLS_KEY_FILE=/path/to-my-ca.key.pem
 

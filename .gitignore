@@ -7,3 +7,6 @@ vendor
 cluster-openapi-v2.json
 notes.txt
 /starter-kit-operator-server
+swaggerui/*.pem
+swaggerui/*.cer
+swaggerui/*.p12
