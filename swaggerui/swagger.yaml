@@ -4,7 +4,6 @@ info:
   description: API description in Markdown.
   version: 1.0.0
 host: my-cluster-host
-basePath: /apis/devx.ibm.com/v1alpha1
 securityDefinitions:
   Bearer:
     type: apiKey
@@ -15,7 +14,7 @@ security:
 schemes:
   - https
 paths:
-  /starterkits:
+  /apis/devx.ibm.com/v1alpha1/starterkits:
     get:
       summary: Return all starter kits located in all namespaces.
       tags:
@@ -28,7 +27,7 @@ paths:
           description: OK
         403:
           description: Unauthorized
-  /namespaces/{namespace}/starterkits:
+  /apis/devx.ibm.com/v1alpha1/namespaces/{namespace}/starterkits:
     get:
       summary: Return all installed starter kits located in a specific namespace.
       tags:
@@ -65,10 +64,13 @@ paths:
           description: Namespace where the starter kit will be located.
         - in: body
           name: body
+          description: Stringified yaml matching starter kit kind.
           required: true
+          consumes:
+            - application/yaml
           schema:
-            type: string  
-            default: 'apiVersion: devx.ibm.com/v1alpha1
+            $ref: "#/definitions/com.ibm.devx.v1alpha1.StarterKit"
+          default: 'apiVersion: devx.ibm.com/v1alpha1
             kind: StarterKit
             metadata:
               name: java-spring-app
@@ -92,7 +94,7 @@ paths:
           description: OK
         403:
           description: Unauthorized
-  /namespaces/{namespace}/starterkits/{name}:
+  /apis/devx.ibm.com/v1alpha1/namespaces/{namespace}/starterkits/{name}:
     get:
       summary: Returns starter kit information.
       tags:
@@ -153,7 +155,7 @@ paths:
           description: OK
         403:
           description: Unauthorized
-  /namespaces/{namespace}/starterkits/{name}/status:
+  /apis/devx.ibm.com/v1alpha1/namespaces/{namespace}/starterkits/{name}/status:
     get:
       summary: read status of the specified StarterKit.
       tags:
@@ -181,3 +183,21 @@ paths:
           description: OK
         403:
           description: Unauthorized
+  /api/v1/secrets?labelSelector=devx:
+    get:
+      summary: list or watch objects of kind Secret
+      tags:
+        - core_v1
+      description: list or watch objects of kind Secret
+      produces:
+        - application/json
+        - application/yaml
+        - application/vnd.kubernetes.protobuf
+        - application/json;stream=watch
+        - application/vnd.kubernetes.protobuf;stream=watch
+      responses:
+        200:
+          description: OK
+        401:
+          description: Unauthorized
+
