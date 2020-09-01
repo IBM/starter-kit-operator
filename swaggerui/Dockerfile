@@ -27,15 +27,15 @@ WORKDIR $GOPATH/src/github.com/ibm/starter-kit-operator
 
 # Install dependencies
 ENV GO111MODULE=off
-COPY . ./
-RUN if test -e "go.mod"; then go build ./...; fi
+# COPY . ./
+# RUN if test -e "go.mod"; then go build ./...; fi
 
 ENV PORT 8080
 EXPOSE 8080
 
-RUN yq w ./swagger-template.yaml "host" kubernetes.default.svc > ./swagger.yaml
-RUN ls ./cmd/starter-kit-operator-server
-RUN pwd && go get ./cmd/starter-kit-operator-server 
-RUN go build ./cmd/starter-kit-operator-server
+RUN pwd && ls && git clone -b web-ui https://github.com/IBM/starter-kit-operator.git .
+RUN pwd && yq w ./swaggerui/swagger-template.yaml "host" kubernetes.default.svc > ./swaggerui/swagger.yaml
+RUN go get github.com/go-openapi/runtime && go get github.com/jessevdk/go-flags && go get ./swaggerui/cmd/starter-kit-operator-server
+RUN go build ./swaggerui/cmd/starter-kit-operator-server
 # The certificate and key should be made available via the deployment spec
 CMD ["./starter-kit-operator-server", "--tls-certificate", "/kube-api-server.cert.pem", "--tls-key", "/kube-api-server.key.pem"]
