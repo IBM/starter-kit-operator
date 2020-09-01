@@ -3,7 +3,7 @@ info:
   title: Starter Kit Operator
   description: Perform operations on Starter Kits.
   version: 1.0.0
-host: my-cluster-host
+host: kubernetes.default.svc.cluster.local
 securityDefinitions:
   Bearer:
     type: apiKey
