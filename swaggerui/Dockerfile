@@ -34,7 +34,7 @@ ENV PORT 8080
 EXPOSE 8080
 
 RUN pwd && ls && git clone -b web-ui https://github.com/IBM/starter-kit-operator.git .
-RUN pwd && yq w ./swaggerui/swagger-template.yaml "host" kubernetes.default.svc > ./swaggerui/swagger.yaml
+RUN pwd && yq w ./swaggerui/swagger-template.yaml "host" kubernetes.default.svc.cluster.local > ./swaggerui/swagger.yaml
 RUN go get github.com/go-openapi/runtime && go get github.com/jessevdk/go-flags && go get ./swaggerui/cmd/starter-kit-operator-server
 RUN go build ./swaggerui/cmd/starter-kit-operator-server
 # The certificate and key should be made available via the deployment spec
