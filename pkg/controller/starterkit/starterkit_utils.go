@@ -339,14 +339,20 @@ func newDeploymentForCR(cr *devxv1alpha1.StarterKit) *appsv1.DeploymentConfig {
 // UIName is the name of all UI resources
 const UIName = "starter-kit-operator-ui"
 
-// TODO this needs to live in an IBM account eventually
-const uiImage = "docker-registry.default.svc:5000/jmeis/" + UIName
-const uiImageVersion = "0.0.1"
+// DefaultUIImageAccount the Docker Hub account hosting the UI image. TODO this needs to live in an IBM account eventually
+const DefaultUIImageAccount = "jmeis"
+
+// DefaultUIImageVersion The version of the UI image to use
+const DefaultUIImageVersion = "0.0.1"
+
+// DockerRegistryURL The URL of the Docker Hub registry accessible within the operator deployment
+const DockerRegistryURL = "docker-registry.default.svc:5000/"
 const uiPort = int32(5000)
 const swaggerPort = int32(5001)
 
 // NewDeploymentForUI returns a new DeploymentConfig for the skit operator UI
-func NewDeploymentForUI(namespace string) *appsv1.DeploymentConfig {
+func NewDeploymentForUI(namespace string, imageAccount string, imageVersion string) *appsv1.DeploymentConfig {
+	var uiImage = DockerRegistryURL + imageAccount + "/" + UIName + ":" + imageVersion
 	labels := map[string]string{
 		"app":  UIName,
 		"name": UIName,
@@ -378,7 +384,7 @@ func NewDeploymentForUI(namespace string) *appsv1.DeploymentConfig {
 						ContainerNames: []string{UIName},
 						From: corev1.ObjectReference{
 							Kind: "ImageStreamTag",
-							Name: uiImage + ":" + uiImageVersion,
+							Name: uiImage,
 						},
 					},
 				},
@@ -396,7 +402,7 @@ func NewDeploymentForUI(namespace string) *appsv1.DeploymentConfig {
 					Containers: []corev1.Container{
 						{
 							Name:  UIName,
-							Image: uiImage + ":" + uiImageVersion,
+							Image: uiImage,
 							Ports: []corev1.ContainerPort{
 								{
 									ContainerPort: int32(uiPort),

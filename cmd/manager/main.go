@@ -31,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
@@ -155,7 +156,31 @@ func main() {
 		log.Info("Installing UI resources")
 		client := mgr.GetClient()
 		ctx := context.Background()
-		uiDeployment := starterkit.NewDeploymentForUI(namespace)
+		// Set operator deployment instance as the owner and controller of all resources so that they get deleted when the operator is uninstalled
+		operatorDeployment := &appsv1.DeploymentConfig{}
+		err = client.Get(ctx, types.NamespacedName{Name: "starter-kit-operator", Namespace: namespace}, operatorDeployment)
+		if err != nil && errors.IsNotFound(err) {
+			log.Error(err, "Could not find Operator Deployment")
+		}
+
+		var uiImageAccount, uiImageVersion string
+		if imgAccountVar, ok := os.LookupEnv("SKIT_OPERATOR_UI_IMAGE_ACCOUNT"); ok {
+			log.Info("Using UI image account " + imgAccountVar)
+			uiImageAccount = imgAccountVar
+		} else {
+			uiImageAccount = starterkit.DefaultUIImageAccount
+		}
+		if imgVersionVar, ok := os.LookupEnv("SKIT_OPERATOR_UI_IMAGE_VERSION"); ok {
+			log.Info("Using UI image version " + imgVersionVar)
+			uiImageVersion = imgVersionVar
+		} else {
+			uiImageVersion = starterkit.DefaultUIImageVersion
+		}
+		uiDeployment := starterkit.NewDeploymentForUI(namespace, uiImageAccount, uiImageVersion)
+		if err := controllerutil.SetControllerReference(operatorDeployment, uiDeployment, mgr.GetScheme()); err != nil {
+			log.Error(err, "Error setting Operator Deployment as owner of UI Deployment")
+		}
+
 		foundDeployment := &appsv1.DeploymentConfig{}
 		err = client.Get(ctx, types.NamespacedName{Name: starterkit.UIName, Namespace: namespace}, foundDeployment)
 		if err != nil && errors.IsNotFound(err) {
@@ -175,6 +200,9 @@ func main() {
 		}
 
 		uiService := starterkit.NewServiceForUI(namespace)
+		if err := controllerutil.SetControllerReference(operatorDeployment, uiService, mgr.GetScheme()); err != nil {
+			log.Error(err, "Error setting Operator Deployment as owner of UI Service")
+		}
 		foundService := &corev1.Service{}
 		err = client.Get(ctx, types.NamespacedName{Name: starterkit.UIName, Namespace: namespace}, foundService)
 		if err != nil && errors.IsNotFound(err) {
@@ -194,6 +222,9 @@ func main() {
 		}
 
 		uiRoute := starterkit.NewRouteForUI(namespace)
+		if err := controllerutil.SetControllerReference(operatorDeployment, uiRoute, mgr.GetScheme()); err != nil {
+			log.Error(err, "Error setting Operator Deployment as owner of UI Route")
+		}
 		foundRoute := &routev1.Route{}
 		err = client.Get(ctx, types.NamespacedName{Name: starterkit.UIName, Namespace: namespace}, foundRoute)
 		if err != nil && errors.IsNotFound(err) {
