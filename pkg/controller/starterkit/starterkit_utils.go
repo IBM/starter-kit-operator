@@ -95,7 +95,8 @@ func (r *ReconcileStarterKit) createTargetGitHubRepo(client *github.Client, skit
 // Create a new Secret
 func newSecretForCR(cr *devxv1alpha1.StarterKit, token string) *corev1.Secret {
 	labels := map[string]string{
-		"app": cr.Name,
+		"app":  cr.Name,
+		"devx": "",
 	}
 	stringData := map[string]string{
 		"WebHookSecretKey": token,
@@ -118,7 +119,8 @@ func newSecretForCR(cr *devxv1alpha1.StarterKit, token string) *corev1.Secret {
 // Create a new Service
 func newServiceForCR(cr *devxv1alpha1.StarterKit) *corev1.Service {
 	labels := map[string]string{
-		"app": cr.Name,
+		"app":  cr.Name,
+		"devx": "",
 	}
 	selector := map[string]string{
 		"name": cr.Name,
@@ -154,7 +156,8 @@ func newServiceForCR(cr *devxv1alpha1.StarterKit) *corev1.Service {
 // Create a new Route
 func newRouteForCR(cr *devxv1alpha1.StarterKit) *routev1.Route {
 	labels := map[string]string{
-		"app": cr.Name,
+		"app":  cr.Name,
+		"devx": "",
 	}
 
 	return &routev1.Route{
@@ -179,7 +182,8 @@ func newRouteForCR(cr *devxv1alpha1.StarterKit) *routev1.Route {
 // Create a new ImageStream
 func newImageStreamForCR(cr *devxv1alpha1.StarterKit) *imagev1.ImageStream {
 	labels := map[string]string{
-		"app": cr.Name,
+		"app":  cr.Name,
+		"devx": "",
 	}
 
 	return &imagev1.ImageStream{
@@ -198,7 +202,8 @@ func newImageStreamForCR(cr *devxv1alpha1.StarterKit) *imagev1.ImageStream {
 // Create a new BuildConfig
 func newBuildForCR(cr *devxv1alpha1.StarterKit) *buildv1.BuildConfig {
 	labels := map[string]string{
-		"app": cr.Name,
+		"app":  cr.Name,
+		"devx": "",
 	}
 
 	return &buildv1.BuildConfig{
@@ -257,6 +262,7 @@ func newDeploymentForCR(cr *devxv1alpha1.StarterKit) *appsv1.DeploymentConfig {
 	labels := map[string]string{
 		"app":  cr.Name,
 		"name": cr.Name,
+		"devx": "",
 	}
 	selector := map[string]string{
 		"app":  cr.Name,
@@ -322,6 +328,152 @@ func newDeploymentForCR(cr *devxv1alpha1.StarterKit) *appsv1.DeploymentConfig {
 						},
 					},
 				},
+			},
+		},
+	}
+}
+
+// ========================================================================
+// UI resources
+
+// UIName is the name of all UI resources
+const UIName = "starter-kit-operator-ui"
+
+// TODO this needs to live in an IBM account eventually
+const uiImage = "docker-registry.default.svc:5000/jmeis/" + UIName
+const uiImageVersion = "0.0.1"
+const uiPort = int32(5000)
+const swaggerPort = int32(5001)
+
+// NewDeploymentForUI returns a new DeploymentConfig for the skit operator UI
+func NewDeploymentForUI(namespace string) *appsv1.DeploymentConfig {
+	labels := map[string]string{
+		"app":  UIName,
+		"name": UIName,
+		"devx": "",
+	}
+	selector := map[string]string{
+		"app":  UIName,
+		"name": UIName,
+	}
+	return &appsv1.DeploymentConfig{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "DeploymentConfig",
+			APIVersion: "github.com/openshift/api/apps/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      UIName,
+			Namespace: namespace,
+			Labels:    labels,
+		},
+		Spec: appsv1.DeploymentConfigSpec{
+			Strategy: appsv1.DeploymentStrategy{
+				Type: appsv1.DeploymentStrategyTypeRolling,
+			},
+			Triggers: appsv1.DeploymentTriggerPolicies{
+				{
+					Type: appsv1.DeploymentTriggerOnImageChange,
+					ImageChangeParams: &appsv1.DeploymentTriggerImageChangeParams{
+						Automatic:      true,
+						ContainerNames: []string{UIName},
+						From: corev1.ObjectReference{
+							Kind: "ImageStreamTag",
+							Name: uiImage + ":" + uiImageVersion,
+						},
+					},
+				},
+				{
+					Type: appsv1.DeploymentTriggerOnConfigChange,
+				},
+			},
+			Replicas: 1,
+			Selector: selector,
+			Template: &corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: labels,
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  UIName,
+							Image: uiImage + ":" + uiImageVersion,
+							Ports: []corev1.ContainerPort{
+								{
+									ContainerPort: int32(uiPort),
+									Name:          "ui",
+								},
+								{
+									ContainerPort: int32(swaggerPort),
+									Name:          "swagger",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+// NewServiceForUI returns a new Service for the skit operator UI
+func NewServiceForUI(namespace string) *corev1.Service {
+	labels := map[string]string{
+		"app":  UIName,
+		"devx": "",
+	}
+	selector := map[string]string{
+		"name": UIName,
+	}
+
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "k8s.io/api/core/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      UIName,
+			Namespace: namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "ui",
+					Port:       uiPort,
+					TargetPort: intstr.FromInt(int(uiPort)),
+				},
+				{
+					Name:       "swagger",
+					Port:       swaggerPort,
+					TargetPort: intstr.FromInt(int(swaggerPort)),
+				},
+			},
+			Selector: selector,
+		},
+	}
+}
+
+// NewRouteForUI returns a new Route for the skit operator UI
+func NewRouteForUI(namespace string) *routev1.Route {
+	labels := map[string]string{
+		"app":  UIName,
+		"devx": "",
+	}
+
+	return &routev1.Route{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Route",
+			APIVersion: "github.com/openshift/api/route/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      UIName,
+			Namespace: namespace,
+			Labels:    labels,
+		},
+		Spec: routev1.RouteSpec{
+			To: routev1.RouteTargetReference{
+				Kind: "Service",
+				Name: UIName,
 			},
 		},
 	}

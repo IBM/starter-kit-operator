@@ -13,7 +13,10 @@ import (
 
 	"github.com/ibm/starter-kit-operator/pkg/apis"
 	"github.com/ibm/starter-kit-operator/pkg/controller"
+	"github.com/ibm/starter-kit-operator/pkg/controller/starterkit"
 
+	appsv1 "github.com/openshift/api/apps/v1"
+	routev1 "github.com/openshift/api/route/v1"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
 	"github.com/operator-framework/operator-sdk/pkg/leader"
@@ -22,7 +25,10 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/restmapper"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/spf13/pflag"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -137,6 +143,73 @@ func main() {
 		// ErrServiceMonitorNotPresent, which can be used to safely skip ServiceMonitor creation.
 		if err == metrics.ErrServiceMonitorNotPresent {
 			log.Info("Install prometheus-operator in your cluster to create ServiceMonitor objects", "error", err.Error())
+		}
+	}
+
+	// ========================================================================
+	if disableUI, ok := os.LookupEnv("DISABLE_SKIT_OPERATOR_UI"); ok {
+		if disableUI == "true" {
+			log.Info("The UI for the Starter Kit Operator will not be installed")
+		}
+	} else {
+		log.Info("Installing UI resources")
+		client := mgr.GetClient()
+		ctx := context.Background()
+		uiDeployment := starterkit.NewDeploymentForUI(namespace)
+		foundDeployment := &appsv1.DeploymentConfig{}
+		err = client.Get(ctx, types.NamespacedName{Name: starterkit.UIName, Namespace: namespace}, foundDeployment)
+		if err != nil && errors.IsNotFound(err) {
+			log.Info("Creating a new Deployment for the UI", "Namespace", namespace, "Name", starterkit.UIName)
+			err = client.Create(ctx, uiDeployment)
+			if err != nil {
+				log.Error(err, "Error creating new DeploymentConfig for the UI")
+			}
+
+			// Deployment created successfully
+			log.Info("Deployment for UI created successfully")
+		} else if err != nil {
+			log.Error(err, "Error fetching DeploymentConfig for the UI")
+		} else {
+			// Deployment already exists - don't requeue
+			log.Info("Skip reconcile: Deployment for the UI already exists", "Deployment.Namespace", foundDeployment.Namespace, "Deployment.Name", foundDeployment.Name)
+		}
+
+		uiService := starterkit.NewServiceForUI(namespace)
+		foundService := &corev1.Service{}
+		err = client.Get(ctx, types.NamespacedName{Name: starterkit.UIName, Namespace: namespace}, foundService)
+		if err != nil && errors.IsNotFound(err) {
+			log.Info("Creating a new Service for the UI", "Namespace", namespace, "Name", starterkit.UIName)
+			err = client.Create(ctx, uiService)
+			if err != nil {
+				log.Error(err, "Error creating Service for the UI")
+			}
+
+			// Service created successfully
+			log.Info("Service for the UI created successfully")
+		} else if err != nil {
+			log.Error(err, "Error fetching Service for the UI")
+		} else {
+			// Service already exists - don't requeue
+			log.Info("Skip reconcile: Service for the UI already exists", "Service.Namespace", foundService.Namespace, "Service.Name", foundService.Name)
+		}
+
+		uiRoute := starterkit.NewRouteForUI(namespace)
+		foundRoute := &routev1.Route{}
+		err = client.Get(ctx, types.NamespacedName{Name: starterkit.UIName, Namespace: namespace}, foundRoute)
+		if err != nil && errors.IsNotFound(err) {
+			log.Info("Creating a new Route for the UI", "Namespace", namespace, "Name", starterkit.UIName)
+			err = client.Create(ctx, uiRoute)
+			if err != nil {
+				log.Error(err, "Error creating Route for the UI")
+			}
+
+			// Route created successfully
+			log.Info("Route for the UI created successfully")
+		} else if err != nil {
+			log.Error(err, "Error fetching Route for the UI")
+		} else {
+			// Route already exists - don't requeue
+			log.Info("Skip reconcile: Route for the UI already exists", "Route.Namespace", foundRoute.Namespace, "Route.Name", foundRoute.Name)
 		}
 	}
 
