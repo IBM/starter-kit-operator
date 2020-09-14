@@ -16,9 +16,7 @@ import (
 	"github.com/ibm/starter-kit-operator/pkg/controller"
 	"github.com/ibm/starter-kit-operator/pkg/controller/starterkit"
 
-	appsv1 "github.com/openshift/api/apps/v1"
 	routev1 "github.com/openshift/api/route/v1"
-	appsv1client "github.com/openshift/client-go/apps/clientset/versioned/typed/apps/v1"
 	routev1client "github.com/openshift/client-go/route/clientset/versioned/typed/route/v1"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
@@ -159,7 +157,6 @@ func main() {
 	} else {
 		log.Info("Installing UI resources")
 		coreclient := kubernetes.NewForConfigOrDie(mgr.GetConfig())
-		appsv1client := appsv1client.NewForConfigOrDie(mgr.GetConfig())
 		routev1client := routev1client.NewForConfigOrDie(mgr.GetConfig())
 		// Set operator deployment instance as the owner and controller of all resources so that they get deleted when the operator is uninstalled
 		operatorDeployment := &coreappsv1.Deployment{}
@@ -187,19 +184,19 @@ func main() {
 		if err := controllerutil.SetControllerReference(operatorDeployment, uiDeployment, mgr.GetScheme()); err != nil {
 			log.Error(err, "Error setting Operator Deployment as owner of UI Deployment")
 		}
-		foundDeployment := &appsv1.DeploymentConfig{}
-		foundDeployment, err = appsv1client.DeploymentConfigs(namespace).Get(starterkit.UIName, metav1.GetOptions{})
+		foundDeployment := &coreappsv1.Deployment{}
+		foundDeployment, err = coreclient.AppsV1().Deployments(namespace).Get(starterkit.UIName, metav1.GetOptions{})
 		if err != nil && errors.IsNotFound(err) {
 			log.Info("Creating a new Deployment for the UI", "Namespace", namespace, "Name", starterkit.UIName)
-			foundDeployment, err = appsv1client.DeploymentConfigs(namespace).Create(uiDeployment)
+			foundDeployment, err = coreclient.AppsV1().Deployments(namespace).Create(uiDeployment)
 			if err != nil {
-				log.Error(err, "Error creating new DeploymentConfig for the UI")
+				log.Error(err, "Error creating new Deployment for the UI")
 			}
 
 			// Deployment created successfully
 			log.Info("Deployment for UI created successfully")
 		} else if err != nil {
-			log.Error(err, "Error fetching DeploymentConfig for the UI")
+			log.Error(err, "Error fetching Deployment for the UI")
 		} else {
 			// Deployment already exists - don't requeue
 			log.Info("Skip reconcile: Deployment for the UI already exists", "Deployment.Namespace", foundDeployment.Namespace, "Deployment.Name", foundDeployment.Name)
@@ -228,7 +225,7 @@ func main() {
 			log.Info("Skip reconcile: Service for the UI already exists", "Service.Namespace", foundService.Namespace, "Service.Name", foundService.Name)
 		}
 
-		// route
+		// route for UI
 		uiRoute := starterkit.NewRouteForUI(namespace)
 		if err := controllerutil.SetControllerReference(operatorDeployment, uiRoute, mgr.GetScheme()); err != nil {
 			log.Error(err, "Error setting Operator Deployment as owner of UI Route")
@@ -249,6 +246,28 @@ func main() {
 		} else {
 			// Route already exists - don't requeue
 			log.Info("Skip reconcile: Route for the UI already exists", "Route.Namespace", foundRoute.Namespace, "Route.Name", foundRoute.Name)
+		}
+
+		// route for swagger UI
+		uiRoute = starterkit.NewRouteForSwaggerUI(namespace)
+		if err := controllerutil.SetControllerReference(operatorDeployment, uiRoute, mgr.GetScheme()); err != nil {
+			log.Error(err, "Error setting Operator Deployment as owner of Swagger UI Route")
+		}
+		foundRoute, err = routev1client.Routes(namespace).Get(starterkit.SwaggerUIName, metav1.GetOptions{})
+		if err != nil && errors.IsNotFound(err) {
+			log.Info("Creating a new Route for the Swagger UI", "Namespace", namespace, "Name", starterkit.SwaggerUIName)
+			foundRoute, err = routev1client.Routes(namespace).Create(uiRoute)
+			if err != nil {
+				log.Error(err, "Error creating Route for the Swagger UI")
+			}
+
+			// Route created successfully
+			log.Info("Route for the Swagger UI created successfully")
+		} else if err != nil {
+			log.Error(err, "Error fetching Route for the Swagger UI")
+		} else {
+			// Route already exists - don't requeue
+			log.Info("Skip reconcile: Route for the Swagger UI already exists", "Route.Namespace", foundRoute.Namespace, "Route.Name", foundRoute.Name)
 		}
 	}
 

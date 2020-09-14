@@ -14,11 +14,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	devxv1alpha1 "github.com/ibm/starter-kit-operator/pkg/apis/devx/v1alpha1"
+	coreappsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	intstr "k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/google/go-github/v32/github"
 )
@@ -336,8 +337,11 @@ func newDeploymentForCR(cr *devxv1alpha1.StarterKit) *appsv1.DeploymentConfig {
 // ========================================================================
 // UI resources
 
-// UIName is the name of all UI resources
+// UIName is the name of most main UI resources
 const UIName = "starter-kit-operator-ui"
+
+// SwaggerUIName is the name of Swagger UI resources
+const SwaggerUIName = "starter-kit-operator-swagger-ui"
 
 // DefaultUIImageAccount the Docker Hub account hosting the UI image. TODO this needs to live in an IBM account eventually
 const DefaultUIImageAccount = "jmeis"
@@ -351,7 +355,7 @@ const uiPort = int32(5000)
 const swaggerPort = int32(5001)
 
 // NewDeploymentForUI returns a new DeploymentConfig for the skit operator UI
-func NewDeploymentForUI(namespace string, imageAccount string, imageVersion string) *appsv1.DeploymentConfig {
+func NewDeploymentForUI(namespace string, imageAccount string, imageVersion string) *coreappsv1.Deployment {
 	var uiImage = imageAccount + "/" + UIName + ":" + imageVersion
 	labels := map[string]string{
 		"app":  UIName,
@@ -362,39 +366,42 @@ func NewDeploymentForUI(namespace string, imageAccount string, imageVersion stri
 		"app":  UIName,
 		"name": UIName,
 	}
-	return &appsv1.DeploymentConfig{
+	numReplicas := int32(1)
+	return &coreappsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "DeploymentConfig",
-			APIVersion: "github.com/openshift/api/apps/v1",
+			Kind:       "Deployment",
+			APIVersion: "k8s.io/api/apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      UIName,
 			Namespace: namespace,
 			Labels:    labels,
 		},
-		Spec: appsv1.DeploymentConfigSpec{
-			Strategy: appsv1.DeploymentStrategy{
-				Type: appsv1.DeploymentStrategyTypeRolling,
+		Spec: coreappsv1.DeploymentSpec{
+			Strategy: coreappsv1.DeploymentStrategy{
+				Type: coreappsv1.RollingUpdateDeploymentStrategyType,
 			},
-			Triggers: appsv1.DeploymentTriggerPolicies{
-				{
-					Type: appsv1.DeploymentTriggerOnImageChange,
-					ImageChangeParams: &appsv1.DeploymentTriggerImageChangeParams{
-						Automatic:      true,
-						ContainerNames: []string{UIName},
-						From: corev1.ObjectReference{
-							Kind: "ImageStreamTag",
-							Name: UIName + ":" + imageVersion,
-						},
-					},
-				},
-				{
-					Type: appsv1.DeploymentTriggerOnConfigChange,
-				},
+			// Triggers: appsv1.DeploymentTriggerPolicies{
+			// 	{
+			// 		Type: appsv1.DeploymentTriggerOnImageChange,
+			// 		ImageChangeParams: &appsv1.DeploymentTriggerImageChangeParams{
+			// 			Automatic:      true,
+			// 			ContainerNames: []string{UIName},
+			// 			From: corev1.ObjectReference{
+			// 				Kind: "ImageStreamTag",
+			// 				Name: UIName + ":" + imageVersion,
+			// 			},
+			// 		},
+			// 	},
+			// 	{
+			// 		Type: appsv1.DeploymentTriggerOnConfigChange,
+			// 	},
+			// },
+			Replicas: &numReplicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: selector,
 			},
-			Replicas: 1,
-			Selector: selector,
-			Template: &corev1.PodTemplateSpec{
+			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: labels,
 				},
@@ -480,6 +487,38 @@ func NewRouteForUI(namespace string) *routev1.Route {
 			To: routev1.RouteTargetReference{
 				Kind: "Service",
 				Name: UIName,
+			},
+			Port: &routev1.RoutePort{
+				TargetPort: intstr.FromInt(int(uiPort)),
+			},
+		},
+	}
+}
+
+// NewRouteForSwaggerUI returns a new Route for the skit operator UI
+func NewRouteForSwaggerUI(namespace string) *routev1.Route {
+	labels := map[string]string{
+		"app":  SwaggerUIName,
+		"devx": "",
+	}
+
+	return &routev1.Route{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Route",
+			APIVersion: "github.com/openshift/api/route/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      SwaggerUIName,
+			Namespace: namespace,
+			Labels:    labels,
+		},
+		Spec: routev1.RouteSpec{
+			To: routev1.RouteTargetReference{
+				Kind: "Service",
+				Name: UIName,
+			},
+			Port: &routev1.RoutePort{
+				TargetPort: intstr.FromInt(int(swaggerPort)),
 			},
 		},
 	}
