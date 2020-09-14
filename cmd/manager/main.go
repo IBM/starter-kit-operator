@@ -28,6 +28,7 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/restmapper"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/spf13/pflag"
+	coreappsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -161,8 +162,8 @@ func main() {
 		appsv1client := appsv1client.NewForConfigOrDie(mgr.GetConfig())
 		routev1client := routev1client.NewForConfigOrDie(mgr.GetConfig())
 		// Set operator deployment instance as the owner and controller of all resources so that they get deleted when the operator is uninstalled
-		operatorDeployment := &appsv1.DeploymentConfig{}
-		operatorDeployment, err = appsv1client.DeploymentConfigs(namespace).Get("starter-kit-operator", metav1.GetOptions{})
+		operatorDeployment := &coreappsv1.Deployment{}
+		operatorDeployment, err = coreclient.AppsV1().Deployments(namespace).Get("starter-kit-operator", metav1.GetOptions{})
 		if err != nil && errors.IsNotFound(err) {
 			log.Error(err, "Could not find Operator Deployment")
 		}
