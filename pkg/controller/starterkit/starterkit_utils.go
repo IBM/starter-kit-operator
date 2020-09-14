@@ -381,22 +381,6 @@ func NewDeploymentForUI(namespace string, imageAccount string, imageVersion stri
 			Strategy: coreappsv1.DeploymentStrategy{
 				Type: coreappsv1.RollingUpdateDeploymentStrategyType,
 			},
-			// Triggers: appsv1.DeploymentTriggerPolicies{
-			// 	{
-			// 		Type: appsv1.DeploymentTriggerOnImageChange,
-			// 		ImageChangeParams: &appsv1.DeploymentTriggerImageChangeParams{
-			// 			Automatic:      true,
-			// 			ContainerNames: []string{UIName},
-			// 			From: corev1.ObjectReference{
-			// 				Kind: "ImageStreamTag",
-			// 				Name: UIName + ":" + imageVersion,
-			// 			},
-			// 		},
-			// 	},
-			// 	{
-			// 		Type: appsv1.DeploymentTriggerOnConfigChange,
-			// 	},
-			// },
 			Replicas: &numReplicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: selector,
