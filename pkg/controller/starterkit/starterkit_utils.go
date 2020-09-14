@@ -352,7 +352,7 @@ const swaggerPort = int32(5001)
 
 // NewDeploymentForUI returns a new DeploymentConfig for the skit operator UI
 func NewDeploymentForUI(namespace string, imageAccount string, imageVersion string) *appsv1.DeploymentConfig {
-	var uiImage = DockerRegistryURL + imageAccount + "/" + UIName + ":" + imageVersion
+	var uiImage = imageAccount + "/" + UIName + ":" + imageVersion
 	labels := map[string]string{
 		"app":  UIName,
 		"name": UIName,
@@ -384,7 +384,7 @@ func NewDeploymentForUI(namespace string, imageAccount string, imageVersion stri
 						ContainerNames: []string{UIName},
 						From: corev1.ObjectReference{
 							Kind: "ImageStreamTag",
-							Name: uiImage,
+							Name: UIName + ":" + imageVersion,
 						},
 					},
 				},
