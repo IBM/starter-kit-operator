@@ -347,7 +347,7 @@ const SwaggerUIName = "starter-kit-operator-swagger-ui"
 const DefaultUIImageAccount = "jmeis"
 
 // DefaultUIImageVersion The version of the UI image to use
-const DefaultUIImageVersion = "0.0.1"
+const DefaultUIImageVersion = "0.0.2"
 
 // DockerRegistryURL The URL of the Docker Hub registry accessible within the operator deployment
 const DockerRegistryURL = "docker-registry.default.svc:5000/"
