@@ -347,12 +347,11 @@ const SwaggerUIName = "starter-kit-operator-swagger-ui"
 const DefaultUIImageAccount = "jmeis"
 
 // DefaultUIImageVersion The version of the UI image to use
-const DefaultUIImageVersion = "0.0.2"
+const DefaultUIImageVersion = "0.0.3"
 
 // DockerRegistryURL The URL of the Docker Hub registry accessible within the operator deployment
 const DockerRegistryURL = "docker-registry.default.svc:5000/"
 const uiPort = int32(5000)
-const swaggerPort = int32(5001)
 
 // NewDeploymentForUI returns a new DeploymentConfig for the skit operator UI
 func NewDeploymentForUI(namespace string, imageAccount string, imageVersion string) *coreappsv1.Deployment {
@@ -399,10 +398,6 @@ func NewDeploymentForUI(namespace string, imageAccount string, imageVersion stri
 									ContainerPort: int32(uiPort),
 									Name:          "ui",
 								},
-								{
-									ContainerPort: int32(swaggerPort),
-									Name:          "swagger",
-								},
 							},
 						},
 					},
@@ -439,11 +434,6 @@ func NewServiceForUI(namespace string) *corev1.Service {
 					Port:       uiPort,
 					TargetPort: intstr.FromInt(int(uiPort)),
 				},
-				{
-					Name:       "swagger",
-					Port:       swaggerPort,
-					TargetPort: intstr.FromInt(int(swaggerPort)),
-				},
 			},
 			Selector: selector,
 		},
@@ -474,35 +464,6 @@ func NewRouteForUI(namespace string) *routev1.Route {
 			},
 			Port: &routev1.RoutePort{
 				TargetPort: intstr.FromInt(int(uiPort)),
-			},
-		},
-	}
-}
-
-// NewRouteForSwaggerUI returns a new Route for the skit operator UI
-func NewRouteForSwaggerUI(namespace string) *routev1.Route {
-	labels := map[string]string{
-		"app":  SwaggerUIName,
-		"devx": "",
-	}
-
-	return &routev1.Route{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Route",
-			APIVersion: "github.com/openshift/api/route/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      SwaggerUIName,
-			Namespace: namespace,
-			Labels:    labels,
-		},
-		Spec: routev1.RouteSpec{
-			To: routev1.RouteTargetReference{
-				Kind: "Service",
-				Name: UIName,
-			},
-			Port: &routev1.RoutePort{
-				TargetPort: intstr.FromInt(int(swaggerPort)),
 			},
 		},
 	}

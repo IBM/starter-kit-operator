@@ -178,6 +178,7 @@ func main() {
 		} else {
 			uiImageVersion = starterkit.DefaultUIImageVersion
 		}
+		log.Info("Using UI image account " + uiImageAccount + ", version " + uiImageVersion)
 
 		// deployment
 		uiDeployment := starterkit.NewDeploymentForUI(namespace, uiImageAccount, uiImageVersion)
@@ -246,28 +247,6 @@ func main() {
 		} else {
 			// Route already exists - don't requeue
 			log.Info("Skip reconcile: Route for the UI already exists", "Route.Namespace", foundRoute.Namespace, "Route.Name", foundRoute.Name)
-		}
-
-		// route for swagger UI
-		uiRoute = starterkit.NewRouteForSwaggerUI(namespace)
-		if err := controllerutil.SetControllerReference(operatorDeployment, uiRoute, mgr.GetScheme()); err != nil {
-			log.Error(err, "Error setting Operator Deployment as owner of Swagger UI Route")
-		}
-		foundRoute, err = routev1client.Routes(namespace).Get(starterkit.SwaggerUIName, metav1.GetOptions{})
-		if err != nil && errors.IsNotFound(err) {
-			log.Info("Creating a new Route for the Swagger UI", "Namespace", namespace, "Name", starterkit.SwaggerUIName)
-			foundRoute, err = routev1client.Routes(namespace).Create(uiRoute)
-			if err != nil {
-				log.Error(err, "Error creating Route for the Swagger UI")
-			}
-
-			// Route created successfully
-			log.Info("Route for the Swagger UI created successfully")
-		} else if err != nil {
-			log.Error(err, "Error fetching Route for the Swagger UI")
-		} else {
-			// Route already exists - don't requeue
-			log.Info("Skip reconcile: Route for the Swagger UI already exists", "Route.Namespace", foundRoute.Namespace, "Route.Name", foundRoute.Name)
 		}
 	}
 
