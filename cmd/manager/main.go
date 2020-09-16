@@ -16,7 +16,9 @@ import (
 	"github.com/ibm/starter-kit-operator/pkg/controller"
 	"github.com/ibm/starter-kit-operator/pkg/controller/starterkit"
 
+	consolev1 "github.com/openshift/api/console/v1"
 	routev1 "github.com/openshift/api/route/v1"
+	consolev1client "github.com/openshift/client-go/console/clientset/versioned/typed/console/v1"
 	routev1client "github.com/openshift/client-go/route/clientset/versioned/typed/route/v1"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
@@ -247,6 +249,29 @@ func main() {
 		} else {
 			// Route already exists - don't requeue
 			log.Info("Skip reconcile: Route for the UI already exists", "Route.Namespace", foundRoute.Namespace, "Route.Name", foundRoute.Name)
+		}
+
+		// console link for UI
+		consoleLink := starterkit.NewConsoleLinkForUI(namespace, "https://"+uiRoute.Spec.Host)
+		if err := controllerutil.SetControllerReference(operatorDeployment, consoleLink, mgr.GetScheme()); err != nil {
+			log.Error(err, "Error setting Operator Deployment as owner of UI ConsoleLink")
+		}
+		foundConsoleLink := &consolev1.ConsoleLink{}
+		foundConsoleLink, err = consolev1client.ConsoleLinks().Get(starterkit.UIName, metav1.GetOptions{})
+		if err != nil && errors.IsNotFound(err) {
+			log.Info("Creating a new ConsoleLink for the UI", "Namespace", namespace, "Name", starterkit.UIName)
+			foundConsoleLink, err = consolev1client.ConsoleLinks().Create(consoleLink)
+			if err != nil {
+				log.Error(err, "Error creating ConsoleLink for the UI")
+			}
+
+			// ConsoleLink created successfully
+			log.Info("ConsoleLink for the UI created successfully")
+		} else if err != nil {
+			log.Error(err, "Error fetching ConsoleLink for the UI")
+		} else {
+			// ConsoleLink already exists - don't requeue
+			log.Info("Skip reconcile: ConsoleLink for the UI already exists", "ConsoleLink.Namespace", foundConsoleLink.Namespace, "ConsoleLink.Name", foundConsoleLink.Name)
 		}
 	}
 

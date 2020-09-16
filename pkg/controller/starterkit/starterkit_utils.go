@@ -8,6 +8,7 @@ import (
 	"github.com/go-logr/logr"
 	appsv1 "github.com/openshift/api/apps/v1"
 	buildv1 "github.com/openshift/api/build/v1"
+	consolev1 "github.com/openshift/api/console/v1"
 	imagev1 "github.com/openshift/api/image/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	"golang.org/x/oauth2"
@@ -464,6 +465,37 @@ func NewRouteForUI(namespace string) *routev1.Route {
 			},
 			Port: &routev1.RoutePort{
 				TargetPort: intstr.FromInt(int(uiPort)),
+			},
+		},
+	}
+}
+
+// NewConsoleLinkForUI returns a new ConsoleLink for the starter kit operator UI
+func NewConsoleLinkForUI(namespace string, href string) *consolev1.ConsoleLink {
+	labels := map[string]string{
+		"app":  UIName,
+		"devx": "",
+	}
+
+	return &consolev1.ConsoleLink{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ConsoleLink",
+			APIVersion: "github.com/openshift/api/console/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      UIName,
+			Namespace: namespace,
+			Labels:    labels,
+		},
+		Spec: consolev1.ConsoleLinkSpec{
+			Link: consolev1.Link{
+				Href: href,
+				Text: "Starter Kit Operator UI",
+			},
+			Location: consolev1.ApplicationMenu,
+			ApplicationMenu: &consolev1.ApplicationMenuSpec{
+				Section:  "App Development",
+				ImageURL: "https://cloud.ibm.com/favicon.ico",
 			},
 		},
 	}
