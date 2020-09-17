@@ -97,8 +97,7 @@ func (r *ReconcileStarterKit) createTargetGitHubRepo(client *github.Client, skit
 // Create a new Secret
 func newSecretForCR(cr *devxv1alpha1.StarterKit, token string) *corev1.Secret {
 	labels := map[string]string{
-		"app":  cr.Name,
-		"devx": "",
+		"app": cr.Name,
 	}
 	stringData := map[string]string{
 		"WebHookSecretKey": token,
