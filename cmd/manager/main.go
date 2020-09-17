@@ -160,6 +160,7 @@ func main() {
 		log.Info("Installing UI resources")
 		coreclient := kubernetes.NewForConfigOrDie(mgr.GetConfig())
 		routev1client := routev1client.NewForConfigOrDie(mgr.GetConfig())
+		consolev1client := consolev1client.NewForConfigOrDie(mgr.GetConfig())
 		// Set operator deployment instance as the owner and controller of all resources so that they get deleted when the operator is uninstalled
 		operatorDeployment := &coreappsv1.Deployment{}
 		operatorDeployment, err = coreclient.AppsV1().Deployments(namespace).Get("starter-kit-operator", metav1.GetOptions{})
@@ -252,7 +253,7 @@ func main() {
 		}
 
 		// console link for UI
-		consoleLink := starterkit.NewConsoleLinkForUI(namespace, "https://"+uiRoute.Spec.Host)
+		consoleLink := starterkit.NewConsoleLinkForUI(namespace, "https://"+foundRoute.Spec.Host)
 		if err := controllerutil.SetControllerReference(operatorDeployment, consoleLink, mgr.GetScheme()); err != nil {
 			log.Error(err, "Error setting Operator Deployment as owner of UI ConsoleLink")
 		}

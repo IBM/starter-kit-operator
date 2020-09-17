@@ -1,18 +1,17 @@
 go 1.13
 
 require (
-	github.com/go-logr/logr v0.1.0
+	github.com/go-logr/logr v0.2.0
 	github.com/go-openapi/spec v0.19.4
 	github.com/google/go-github/v32 v32.0.0
-	github.com/openshift/api v3.9.1-0.20191217101959-25e6c5c55d58+incompatible
-	github.com/openshift/client-go v0.0.0-20190923180330-3b6373338c9b
+	github.com/openshift/api v3.9.1-0.20190924102528-32369d4db2ad+incompatible
+	github.com/openshift/client-go v0.0.0-20200422192633-6f6c07fc2a70
 	github.com/operator-framework/operator-sdk v0.16.0
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/sys v0.0.0-20200803150936-fd5f0c170ac3 // indirect
-	gopkg.in/yaml.v2 v2.3.0 // indirect
-	k8s.io/api v0.0.0
-	k8s.io/apimachinery v0.0.0
+	k8s.io/api v0.19.0
+	k8s.io/apimachinery v0.19.0
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/kube-openapi v0.0.0-20190918143330-0270cf2f1c1d
 	k8s.io/kubernetes v1.16.2
@@ -46,6 +45,11 @@ replace (
 
 replace github.com/docker/docker => github.com/moby/moby v0.7.3-0.20190826074503-38ab9da00309 // Required by Helm
 
-replace github.com/openshift/api => github.com/openshift/api v0.0.0-20190924102528-32369d4db2ad // Required until https://github.com/operator-framework/operator-lifecycle-manager/pull/1241 is resolved
+replace (
+	github.com/openshift/api => github.com/openshift/api v0.0.0-20200623075207-eb651a5bb0ad
+	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20191125132246-f6563a70e19a
+)
+
+replace github.com/go-logr/logr => github.com/go-logr/logr v0.1.0
 
 module github.com/ibm/starter-kit-operator

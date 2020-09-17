@@ -46,11 +46,13 @@ rules:
   - build.openshift.io
   - route.openshift.io
   - apps.openshift.io
+  - console.openshift.io
   resources:
   - imagestreams
   - buildconfigs
   - routes
   - deploymentconfigs
+  - consolelinks
   verbs:
   - '*'
 - apiGroups:

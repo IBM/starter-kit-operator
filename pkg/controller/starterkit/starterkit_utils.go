@@ -466,6 +466,9 @@ func NewRouteForUI(namespace string) *routev1.Route {
 			Port: &routev1.RoutePort{
 				TargetPort: intstr.FromInt(int(uiPort)),
 			},
+			TLS: &routev1.TLSConfig{
+				Termination: routev1.TLSTerminationEdge,
+			},
 		},
 	}
 }
