@@ -357,9 +357,10 @@ const uiPort = int32(5000)
 func NewDeploymentForUI(namespace string, imageAccount string, imageVersion string) *coreappsv1.Deployment {
 	var uiImage = imageAccount + "/" + UIName + ":" + imageVersion
 	labels := map[string]string{
-		"app":  UIName,
-		"name": UIName,
-		"devx": "",
+		"app":                       UIName,
+		"name":                      UIName,
+		"devx":                      "",
+		"app.kubernetes.io/part-of": "starter-kit-operator",
 	}
 	selector := map[string]string{
 		"app":  UIName,
@@ -395,8 +396,17 @@ func NewDeploymentForUI(namespace string, imageAccount string, imageVersion stri
 							Image: uiImage,
 							Ports: []corev1.ContainerPort{
 								{
-									ContainerPort: int32(uiPort),
+									ContainerPort: uiPort,
 									Name:          "ui",
+								},
+							},
+							LivenessProbe: &corev1.Probe{
+								Handler: corev1.Handler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path:   "/api/v1/health",
+										Port:   intstr.FromInt(int(uiPort)),
+										Scheme: corev1.URISchemeHTTPS,
+									},
 								},
 							},
 						},
