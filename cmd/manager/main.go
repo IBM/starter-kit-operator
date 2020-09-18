@@ -184,14 +184,14 @@ func main() {
 		log.Info("Using UI image account " + uiImageAccount + ", version " + uiImageVersion)
 
 		// deployment
-		uiDeployment := starterkit.NewDeploymentForUI(namespace, uiImageAccount, uiImageVersion)
-		if err := controllerutil.SetControllerReference(operatorDeployment, uiDeployment, mgr.GetScheme()); err != nil {
-			log.Error(err, "Error setting Operator Deployment as owner of UI Deployment")
-		}
 		foundDeployment := &coreappsv1.Deployment{}
 		foundDeployment, err = coreclient.AppsV1().Deployments(namespace).Get(starterkit.UIName, metav1.GetOptions{})
 		if err != nil && errors.IsNotFound(err) {
 			log.Info("Creating a new Deployment for the UI", "Namespace", namespace, "Name", starterkit.UIName)
+			uiDeployment := starterkit.NewDeploymentForUI(namespace, uiImageAccount, uiImageVersion)
+			if err := controllerutil.SetControllerReference(operatorDeployment, uiDeployment, mgr.GetScheme()); err != nil {
+				log.Error(err, "Error setting Operator Deployment as owner of UI Deployment")
+			}
 			foundDeployment, err = coreclient.AppsV1().Deployments(namespace).Create(uiDeployment)
 			if err != nil {
 				log.Error(err, "Error creating new Deployment for the UI")
@@ -207,14 +207,14 @@ func main() {
 		}
 
 		// service
-		uiService := starterkit.NewServiceForUI(namespace)
-		if err := controllerutil.SetControllerReference(operatorDeployment, uiService, mgr.GetScheme()); err != nil {
-			log.Error(err, "Error setting Operator Deployment as owner of UI Service")
-		}
 		foundService := &corev1.Service{}
 		foundService, err = coreclient.CoreV1().Services(namespace).Get(starterkit.UIName, metav1.GetOptions{})
 		if err != nil && errors.IsNotFound(err) {
 			log.Info("Creating a new Service for the UI", "Namespace", namespace, "Name", starterkit.UIName)
+			uiService := starterkit.NewServiceForUI(namespace)
+			if err := controllerutil.SetControllerReference(operatorDeployment, uiService, mgr.GetScheme()); err != nil {
+				log.Error(err, "Error setting Operator Deployment as owner of UI Service")
+			}
 			foundService, err = coreclient.CoreV1().Services(namespace).Create(uiService)
 			if err != nil {
 				log.Error(err, "Error creating Service for the UI")
@@ -230,14 +230,14 @@ func main() {
 		}
 
 		// route for UI
-		uiRoute := starterkit.NewRouteForUI(namespace)
-		if err := controllerutil.SetControllerReference(operatorDeployment, uiRoute, mgr.GetScheme()); err != nil {
-			log.Error(err, "Error setting Operator Deployment as owner of UI Route")
-		}
 		foundRoute := &routev1.Route{}
 		foundRoute, err = routev1client.Routes(namespace).Get(starterkit.UIName, metav1.GetOptions{})
 		if err != nil && errors.IsNotFound(err) {
 			log.Info("Creating a new Route for the UI", "Namespace", namespace, "Name", starterkit.UIName)
+			uiRoute := starterkit.NewRouteForUI(namespace)
+			if err := controllerutil.SetControllerReference(operatorDeployment, uiRoute, mgr.GetScheme()); err != nil {
+				log.Error(err, "Error setting Operator Deployment as owner of UI Route")
+			}
 			foundRoute, err = routev1client.Routes(namespace).Create(uiRoute)
 			if err != nil {
 				log.Error(err, "Error creating Route for the UI")
@@ -253,14 +253,14 @@ func main() {
 		}
 
 		// console link for UI
-		consoleLink := starterkit.NewConsoleLinkForUI(namespace, "https://"+foundRoute.Spec.Host)
-		if err := controllerutil.SetControllerReference(operatorDeployment, consoleLink, mgr.GetScheme()); err != nil {
-			log.Error(err, "Error setting Operator Deployment as owner of UI ConsoleLink")
-		}
 		foundConsoleLink := &consolev1.ConsoleLink{}
 		foundConsoleLink, err = consolev1client.ConsoleLinks().Get(starterkit.UIName, metav1.GetOptions{})
 		if err != nil && errors.IsNotFound(err) {
 			log.Info("Creating a new ConsoleLink for the UI", "Namespace", namespace, "Name", starterkit.UIName)
+			consoleLink := starterkit.NewConsoleLinkForUI(namespace, "https://"+foundRoute.Spec.Host)
+			if err := controllerutil.SetControllerReference(operatorDeployment, consoleLink, mgr.GetScheme()); err != nil {
+				log.Error(err, "Error setting Operator Deployment as owner of UI ConsoleLink")
+			}
 			foundConsoleLink, err = consolev1client.ConsoleLinks().Create(consoleLink)
 			if err != nil {
 				log.Error(err, "Error creating ConsoleLink for the UI")

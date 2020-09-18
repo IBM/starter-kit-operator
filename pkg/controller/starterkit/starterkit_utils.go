@@ -347,7 +347,7 @@ const SwaggerUIName = "starter-kit-operator-swagger-ui"
 const DefaultUIImageAccount = "jmeis"
 
 // DefaultUIImageVersion The version of the UI image to use
-const DefaultUIImageVersion = "0.0.4"
+const DefaultUIImageVersion = "0.0.7"
 
 // DockerRegistryURL The URL of the Docker Hub registry accessible within the operator deployment
 const DockerRegistryURL = "docker-registry.default.svc:5000/"
@@ -405,7 +405,7 @@ func NewDeploymentForUI(namespace string, imageAccount string, imageVersion stri
 									HTTPGet: &corev1.HTTPGetAction{
 										Path:   "/api/v1/health",
 										Port:   intstr.FromInt(int(uiPort)),
-										Scheme: corev1.URISchemeHTTPS,
+										Scheme: corev1.URISchemeHTTP,
 									},
 								},
 							},
@@ -476,7 +476,8 @@ func NewRouteForUI(namespace string) *routev1.Route {
 				TargetPort: intstr.FromInt(int(uiPort)),
 			},
 			TLS: &routev1.TLSConfig{
-				Termination: routev1.TLSTerminationEdge,
+				Termination:                   routev1.TLSTerminationEdge,
+				InsecureEdgeTerminationPolicy: routev1.InsecureEdgeTerminationPolicyRedirect,
 			},
 		},
 	}
