@@ -17,7 +17,7 @@ spec:
       serviceAccountName: starter-kit-operator
       containers:
         - name: starter-kit-operator
-          image: jmeis/starter-kit-operator:0.1.0
+          image: ibmcom/starter-kit-operator:0.1.0
           command:
           - starter-kit-operator
           imagePullPolicy: Always
