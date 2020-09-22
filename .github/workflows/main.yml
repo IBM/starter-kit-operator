@@ -56,7 +56,6 @@ jobs:
         env:
           DOCKER_USER: ${{ secrets.DOCKER_USER }}
           DOCKER_PASS: ${{ secrets.DOCKER_PASS }}
-          DOCKER_HOST: test
         run: |
           set -x
           echo $DOCKER_PASS | docker login --username=$DOCKER_USER --password-stdin # $DOCKER_HOST
