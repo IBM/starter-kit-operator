@@ -45,10 +45,20 @@ jobs:
           sudo cp operator-sdk-${SDK_RELEASE_VERSION}-x86_64-linux-gnu /usr/local/bin/operator-sdk
           rm operator-sdk-${SDK_RELEASE_VERSION}-x86_64-linux-gnu
 
-      # Runs a set of commands using the runners shell
-      - name: open-sdk build
+      - name: open-sdk build image
         env:
           IMAGE: nfstein/starter-kit-operator:0.1.0
         run: |
           cd $GITHUB_WORKSPACE
           operator-sdk build $IMAGE
+          
+      - name: push image
+        env:
+          DOCKER_USER: ${{ secrets.DOCKER_USER }}
+          DOCKER_PASS: ${{ secrets.DOCKER_PASS }}
+          DOCKER_HOST: test
+        run: |
+          set -x
+          echo $DOCKER_PASS | docker login --username=$DOCKER_USER --password-stdin $DOCKER_HOST
+
+        
