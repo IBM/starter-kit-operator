@@ -33,7 +33,7 @@ metadata:
     repository: https://github.com/IBM/starter-kit-operator
     support: IBM
   name: starter-kit-operator.v0.2.0
-  namespace: e2e-testing
+  namespace: placeholder
 spec:
   customresourcedefinitions:
     owned:
