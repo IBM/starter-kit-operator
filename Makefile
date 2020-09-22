@@ -9,7 +9,7 @@ SKIT_OWNER=gh-username
 SKIT_DESCRIPTION=example code pattern
 SKIT_SECRET_KEY_REF_NAME=my-github-token
 SKIT_SECRET_KEY_REF_KEY=apikey
-SKIT_DEPLOYMENT_IMAGE=jmeis/starter-kit-operator:0.1.0
+SKIT_DEPLOYMENT_IMAGE=ibmcom/starter-kit-operator:0.1.0
 
 ##@ Application
 

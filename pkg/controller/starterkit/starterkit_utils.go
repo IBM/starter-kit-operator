@@ -344,10 +344,10 @@ const UIName = "starter-kit-operator-ui"
 const SwaggerUIName = "starter-kit-operator-swagger-ui"
 
 // DefaultUIImageAccount the Docker Hub account hosting the UI image. TODO this needs to live in an IBM account eventually
-const DefaultUIImageAccount = "jmeis"
+const DefaultUIImageAccount = "ibmcom"
 
 // DefaultUIImageVersion The version of the UI image to use
-const DefaultUIImageVersion = "0.0.7"
+const DefaultUIImageVersion = "0.1.0"
 
 // DockerRegistryURL The URL of the Docker Hub registry accessible within the operator deployment
 const DockerRegistryURL = "docker-registry.default.svc:5000/"
