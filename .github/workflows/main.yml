@@ -56,8 +56,10 @@ jobs:
         env:
           DOCKER_USER: ${{ secrets.DOCKER_USER }}
           DOCKER_PASS: ${{ secrets.DOCKER_PASS }}
+          IMAGE: nfstein/starter-kit-operator:0.1.0
         run: |
           set -x
           echo $DOCKER_PASS | docker login --username=$DOCKER_USER --password-stdin # $DOCKER_HOST
+          docker push 
 
         
