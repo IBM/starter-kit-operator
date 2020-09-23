@@ -8,12 +8,18 @@ import (
 	"runtime"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
+	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 
 	"github.com/ibm/starter-kit-operator/pkg/apis"
 	"github.com/ibm/starter-kit-operator/pkg/controller"
+	"github.com/ibm/starter-kit-operator/pkg/controller/starterkit"
 
+	consolev1 "github.com/openshift/api/console/v1"
+	routev1 "github.com/openshift/api/route/v1"
+	consolev1client "github.com/openshift/client-go/console/clientset/versioned/typed/console/v1"
+	routev1client "github.com/openshift/client-go/route/clientset/versioned/typed/route/v1"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
 	"github.com/operator-framework/operator-sdk/pkg/leader"
@@ -22,9 +28,14 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/restmapper"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/spf13/pflag"
+	coreappsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
@@ -137,6 +148,131 @@ func main() {
 		// ErrServiceMonitorNotPresent, which can be used to safely skip ServiceMonitor creation.
 		if err == metrics.ErrServiceMonitorNotPresent {
 			log.Info("Install prometheus-operator in your cluster to create ServiceMonitor objects", "error", err.Error())
+		}
+	}
+
+	// ========================================================================
+	if disableUI, ok := os.LookupEnv("DISABLE_SKIT_OPERATOR_UI"); ok {
+		if disableUI == "true" {
+			log.Info("The UI for the Starter Kit Operator will not be installed")
+		}
+	} else {
+		log.Info("Installing UI resources")
+		coreclient := kubernetes.NewForConfigOrDie(mgr.GetConfig())
+		routev1client := routev1client.NewForConfigOrDie(mgr.GetConfig())
+		consolev1client := consolev1client.NewForConfigOrDie(mgr.GetConfig())
+		// Set operator deployment instance as the owner and controller of all resources so that they get deleted when the operator is uninstalled
+		operatorDeployment := &coreappsv1.Deployment{}
+		operatorDeployment, err = coreclient.AppsV1().Deployments(namespace).Get("starter-kit-operator", metav1.GetOptions{})
+		if err != nil && errors.IsNotFound(err) {
+			log.Error(err, "Could not find Operator Deployment")
+		}
+
+		var uiImageAccount, uiImageVersion string
+		if imgAccountVar, ok := os.LookupEnv("SKIT_OPERATOR_UI_IMAGE_ACCOUNT"); ok {
+			log.Info("Using UI image account " + imgAccountVar)
+			uiImageAccount = imgAccountVar
+		} else {
+			uiImageAccount = starterkit.DefaultUIImageAccount
+		}
+		if imgVersionVar, ok := os.LookupEnv("SKIT_OPERATOR_UI_IMAGE_VERSION"); ok {
+			log.Info("Using UI image version " + imgVersionVar)
+			uiImageVersion = imgVersionVar
+		} else {
+			uiImageVersion = starterkit.DefaultUIImageVersion
+		}
+		log.Info("Using UI image account " + uiImageAccount + ", version " + uiImageVersion)
+
+		// deployment
+		foundDeployment := &coreappsv1.Deployment{}
+		foundDeployment, err = coreclient.AppsV1().Deployments(namespace).Get(starterkit.UIName, metav1.GetOptions{})
+		if err != nil && errors.IsNotFound(err) {
+			log.Info("Creating a new Deployment for the UI", "Namespace", namespace, "Name", starterkit.UIName)
+			uiDeployment := starterkit.NewDeploymentForUI(namespace, uiImageAccount, uiImageVersion)
+			if err := controllerutil.SetControllerReference(operatorDeployment, uiDeployment, mgr.GetScheme()); err != nil {
+				log.Error(err, "Error setting Operator Deployment as owner of UI Deployment")
+			}
+			foundDeployment, err = coreclient.AppsV1().Deployments(namespace).Create(uiDeployment)
+			if err != nil {
+				log.Error(err, "Error creating new Deployment for the UI")
+			}
+
+			// Deployment created successfully
+			log.Info("Deployment for UI created successfully")
+		} else if err != nil {
+			log.Error(err, "Error fetching Deployment for the UI")
+		} else {
+			// Deployment already exists - don't requeue
+			log.Info("Skip reconcile: Deployment for the UI already exists", "Deployment.Namespace", foundDeployment.Namespace, "Deployment.Name", foundDeployment.Name)
+		}
+
+		// service
+		foundService := &corev1.Service{}
+		foundService, err = coreclient.CoreV1().Services(namespace).Get(starterkit.UIName, metav1.GetOptions{})
+		if err != nil && errors.IsNotFound(err) {
+			log.Info("Creating a new Service for the UI", "Namespace", namespace, "Name", starterkit.UIName)
+			uiService := starterkit.NewServiceForUI(namespace)
+			if err := controllerutil.SetControllerReference(operatorDeployment, uiService, mgr.GetScheme()); err != nil {
+				log.Error(err, "Error setting Operator Deployment as owner of UI Service")
+			}
+			foundService, err = coreclient.CoreV1().Services(namespace).Create(uiService)
+			if err != nil {
+				log.Error(err, "Error creating Service for the UI")
+			}
+
+			// Service created successfully
+			log.Info("Service for the UI created successfully")
+		} else if err != nil {
+			log.Error(err, "Error fetching Service for the UI")
+		} else {
+			// Service already exists - don't requeue
+			log.Info("Skip reconcile: Service for the UI already exists", "Service.Namespace", foundService.Namespace, "Service.Name", foundService.Name)
+		}
+
+		// route for UI
+		foundRoute := &routev1.Route{}
+		foundRoute, err = routev1client.Routes(namespace).Get(starterkit.UIName, metav1.GetOptions{})
+		if err != nil && errors.IsNotFound(err) {
+			log.Info("Creating a new Route for the UI", "Namespace", namespace, "Name", starterkit.UIName)
+			uiRoute := starterkit.NewRouteForUI(namespace)
+			if err := controllerutil.SetControllerReference(operatorDeployment, uiRoute, mgr.GetScheme()); err != nil {
+				log.Error(err, "Error setting Operator Deployment as owner of UI Route")
+			}
+			foundRoute, err = routev1client.Routes(namespace).Create(uiRoute)
+			if err != nil {
+				log.Error(err, "Error creating Route for the UI")
+			}
+
+			// Route created successfully
+			log.Info("Route for the UI created successfully")
+		} else if err != nil {
+			log.Error(err, "Error fetching Route for the UI")
+		} else {
+			// Route already exists - don't requeue
+			log.Info("Skip reconcile: Route for the UI already exists", "Route.Namespace", foundRoute.Namespace, "Route.Name", foundRoute.Name)
+		}
+
+		// console link for UI
+		foundConsoleLink := &consolev1.ConsoleLink{}
+		foundConsoleLink, err = consolev1client.ConsoleLinks().Get(starterkit.UIName, metav1.GetOptions{})
+		if err != nil && errors.IsNotFound(err) {
+			log.Info("Creating a new ConsoleLink for the UI", "Namespace", namespace, "Name", starterkit.UIName)
+			consoleLink := starterkit.NewConsoleLinkForUI(namespace, "https://"+foundRoute.Spec.Host)
+			if err := controllerutil.SetControllerReference(operatorDeployment, consoleLink, mgr.GetScheme()); err != nil {
+				log.Error(err, "Error setting Operator Deployment as owner of UI ConsoleLink")
+			}
+			foundConsoleLink, err = consolev1client.ConsoleLinks().Create(consoleLink)
+			if err != nil {
+				log.Error(err, "Error creating ConsoleLink for the UI")
+			}
+
+			// ConsoleLink created successfully
+			log.Info("ConsoleLink for the UI created successfully")
+		} else if err != nil {
+			log.Error(err, "Error fetching ConsoleLink for the UI")
+		} else {
+			// ConsoleLink already exists - don't requeue
+			log.Info("Skip reconcile: ConsoleLink for the UI already exists", "ConsoleLink.Namespace", foundConsoleLink.Namespace, "ConsoleLink.Name", foundConsoleLink.Name)
 		}
 	}
 

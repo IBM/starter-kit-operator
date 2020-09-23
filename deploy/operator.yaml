@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: starter-kit-operator
+  labels:
+    app.kubernetes.io/part-of: starter-kit-operator
 spec:
   replicas: 1
   selector:
@@ -15,7 +17,7 @@ spec:
       serviceAccountName: starter-kit-operator
       containers:
         - name: starter-kit-operator
-          image: jmeis/starter-kit-operator:0.1.0
+          image: ibmcom/starter-kit-operator:0.1.0
           command:
           - starter-kit-operator
           imagePullPolicy: Always

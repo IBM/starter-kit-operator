@@ -407,7 +407,7 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 		reqLogger.Info("Creating a new Deployment", "Deployment.Namespace", deployment.Namespace, "Deployment.Name", deployment.Name)
 		err = r.client.Create(ctx, deployment)
 		if err != nil {
-			reqLogger.Info("Error creating new DeploymentConfig")
+			reqLogger.Error(err, "Error creating new DeploymentConfig")
 			return reconcile.Result{}, err
 		}
 
@@ -420,6 +420,9 @@ func (r *ReconcileStarterKit) Reconcile(request reconcile.Request) (reconcile.Re
 		// Deployment already exists - don't requeue
 		reqLogger.Info("Skip reconcile: Deployment already exists", "Deployment.Namespace", foundDeployment.Namespace, "Deployment.Name", foundDeployment.Name)
 	}
+
+	// ========================================================================
+	// *** handle cleanup of other resources ***
 
 	// Check if the StarterKit instance is marked to be deleted, which is
 	// indicated by the deletion timestamp being set.

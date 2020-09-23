@@ -9,7 +9,7 @@ SKIT_OWNER=gh-username
 SKIT_DESCRIPTION=example code pattern
 SKIT_SECRET_KEY_REF_NAME=my-github-token
 SKIT_SECRET_KEY_REF_KEY=apikey
-SKIT_DEPLOYMENT_IMAGE=jmeis/starter-kit-operator:0.1.0
+SKIT_DEPLOYMENT_IMAGE=ibmcom/starter-kit-operator:0.1.0
 
 ##@ Application
 
@@ -37,6 +37,11 @@ install: ## Install all resources for deployment (CR/CRD's, RBAC and Operator). 
 	- oc apply -f deploy/service_account.yaml
 	@echo ....... Applying Operator .......
 	- yq w deploy/operator.yaml "spec.template.spec.containers[0].image" "${SKIT_DEPLOYMENT_IMAGE}" | oc apply -f - 
+
+install-csv: ## Install all resources for deployment using the latest Cluster Service Version file. Requires the yq commandline tool.  Parameters: NAMESPACE
+	@echo Switching to project ${NAMESPACE}
+	- oc project ${NAMESPACE}
+	- yq w olm/0.2.0/starter-kit-operator.v0.2.0.clusterserviceversion.yaml "metadata.namespace" "${NAMESPACE}" | oc apply -f - 
 
 uninstall: ## Uninstall all that are performed in the install. Parameters: NAMESPACE
 	@echo Switching to project ${NAMESPACE}
