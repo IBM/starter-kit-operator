@@ -28,6 +28,11 @@ jobs:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
+    env:
+      IMAGE_NAME: nfstein/starter-kit-operator
+      IMAGE_TAG: 0.1.$GITHUB_RUN_NUMBER
+
+    
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -47,29 +52,24 @@ jobs:
           rm operator-sdk-${SDK_RELEASE_VERSION}-x86_64-linux-gnu
 
       - name: operator-sdk build image
-        env:
-          IMAGE: nfstein/starter-kit-operator
         run: |
           cd $GITHUB_WORKSPACE
-          operator-sdk build $IMAGE:0.1.$GITHUB_RUN_NUMBER
+          operator-sdk build $IMAGE_NAME:$IMAGE_TAG
        
       - name: TODO ibm vulnerability advisor
-        env:
-          IMAGE: nfstein/starter-kit-operator
         run: |
           # install ibm cli
           # login
-          # push image to <region>.icr.io/$IMAGE:0.1.$GITHUB_RUN_NUMBER
-          # ibmcloud cr va <region>.icr.io/$IMAGE:0.1.$GITHUB_RUN_NUMBER
-          echo no vulnerability scan yet
+          # push image to <region>.icr.io/$IMAGE_NAME:$IMAGE_TAG
+          # ibmcloud cr va <region>.icr.io/$IMAGE_NAME:$IMAGE_TAG
+          echo TODO no vulnerability scan yet
           
       - name: push image
         env:
           DOCKER_USER: ${{ secrets.DOCKER_USER }}
           DOCKER_PASS: ${{ secrets.DOCKER_PASS }}
-          IMAGE: nfstein/starter-kit-operator
         run: |
           echo $DOCKER_PASS | docker login --username=$DOCKER_USER --password-stdin
-          docker push $IMAGE:0.1.$GITHUB_RUN_NUMBER
+          docker push $IMAGE_NAME:$IMAGE_TAG
 
         
