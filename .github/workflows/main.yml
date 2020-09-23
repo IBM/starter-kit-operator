@@ -60,6 +60,6 @@ jobs:
         run: |
           set -x
           echo $DOCKER_PASS | docker login --username=$DOCKER_USER --password-stdin # $DOCKER_HOST
-          docker push 
+          docker push $IMAGE
 
         
