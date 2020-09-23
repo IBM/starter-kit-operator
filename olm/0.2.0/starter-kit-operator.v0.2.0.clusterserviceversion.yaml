@@ -193,7 +193,7 @@ spec:
         serviceAccountName: starter-kit-operator
       deployments:
       - name: starter-kit-operator
-        labels:
+        label:
           app.kubernetes.io/part-of: starter-kit-operator
         spec:
           replicas: 1
@@ -238,6 +238,7 @@ spec:
   - Cloud
   labels:
     name: starter-kit-operator
+    app.kubernetes.io/part-of: starter-kit-operator
   links:
   - name: IBM Cloud Starter Kit Operator Project
     url: https://github.com/IBM/starter-kit-operator
