@@ -30,8 +30,7 @@ jobs:
 
     env:
       IMAGE_NAME: nfstein/starter-kit-operator
-      IMAGE_TAG: 0.1.$GITHUB_RUN_NUMBER
-
+      IMAGE_TAG_PREFIX: 0.1.
     
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -54,14 +53,15 @@ jobs:
       - name: operator-sdk build image
         run: |
           cd $GITHUB_WORKSPACE
-          operator-sdk build $IMAGE_NAME:$IMAGE_TAG
+          operator-sdk build $IMAGE_NAME:$IMAGE_TAG_PREFIX$GITHUB_RUN_NUMBER
        
       - name: TODO ibm vulnerability advisor
         run: |
+          # # add ibmcloud secrets to repo
           # install ibm cli
           # login
-          # push image to <region>.icr.io/$IMAGE_NAME:$IMAGE_TAG
-          # ibmcloud cr va <region>.icr.io/$IMAGE_NAME:$IMAGE_TAG
+          # push image to <region>.icr.io/$IMAGE_NAME:$IMAGE_TAG_PREFIX$GITHUB_RUN_NUMBER
+          # ibmcloud cr va <region>.icr.io/$IMAGE_NAME:$IMAGE_TAG_PREFIX$GITHUB_RUN_NUMBER
           echo TODO no vulnerability scan yet
           
       - name: push image
@@ -70,6 +70,6 @@ jobs:
           DOCKER_PASS: ${{ secrets.DOCKER_PASS }}
         run: |
           echo $DOCKER_PASS | docker login --username=$DOCKER_USER --password-stdin
-          docker push $IMAGE_NAME:$IMAGE_TAG
+          docker push $IMAGE_NAME:$IMAGE_TAG_PREFIX$GITHUB_RUN_NUMBER
 
         
