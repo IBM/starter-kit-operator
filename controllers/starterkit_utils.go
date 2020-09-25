@@ -1,4 +1,4 @@
-package starterkit
+package controllers
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 	"golang.org/x/oauth2"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	devxv1alpha1 "github.com/ibm/starter-kit-operator/pkg/apis/devx/v1alpha1"
+	devxv1alpha1 "github.com/IBM/starter-kit-operator/api/v1alpha1"
 	coreappsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -34,7 +34,7 @@ func (r *ReconcileStarterKit) fetchGitHubSecret(skit *devxv1alpha1.StarterKit, r
 		Name:      skit.Spec.TemplateRepo.SecretKeyRef.Name,
 	}
 	reqLogger.Info("Fetching GitHub secret")
-	err := r.client.Get(ctx, *secretNamespaceName, githubTokenSecret)
+	err := r.Client.Get(ctx, *secretNamespaceName, githubTokenSecret)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -85,7 +85,7 @@ func (r *ReconcileStarterKit) createTargetGitHubRepo(client *github.Client, skit
 		// Set the TargetRepo to the repo created
 		skit.Status.TargetRepo = *createdRepo.HTMLURL
 
-		if err := r.client.Status().Update(ctx, skit); err != nil {
+		if err := r.Client.Status().Update(ctx, skit); err != nil {
 			return err
 		}
 

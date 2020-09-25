@@ -14,15 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package starterkit
+package controllers
 
 import (
 	"context"
 	"os"
 
 	"github.com/go-logr/logr"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v32/github"
 	appsv1 "github.com/openshift/api/apps/v1"
+	buildv1 "github.com/openshift/api/build/v1"
+	configv1 "github.com/openshift/api/config/v1"
 	imagev1 "github.com/openshift/api/image/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -44,7 +46,7 @@ var log = logf.Log.WithName("controller_starterkit")
 
 // ReconcileStarterKit reconciles a StarterKit object
 type ReconcileStarterKit struct {
-	client.Client
+	Client client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
@@ -52,16 +54,16 @@ type ReconcileStarterKit struct {
 // Reconcile reconciles requests
 // +kubebuilder:rbac:groups=devx.my.domain,resources=starterkits,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=devx.my.domain,resources=starterkits/status,verbs=get;update;patch
-func (r *ReconcileStarterKit) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *ReconcileStarterKit) Reconcile(request ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
-	reqLogger = r.Log.WithValues("starterkit", req.NamespacedName)
+	reqLogger := r.Log.WithValues("starterkit", request.NamespacedName)
 
 	// reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	reqLogger.Info("Reconciling StarterKit")
 	ctx := context.Background()
 	// Fetch the StarterKit instance
 	instance := &devxv1alpha1.StarterKit{}
-	err := r.client.Get(ctx, request.NamespacedName, instance)
+	err := r.Client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -81,7 +83,7 @@ func (r *ReconcileStarterKit) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	infrastructureName := &types.NamespacedName{
 		Name: "cluster",
 	}
-	err = r.client.Get(ctx, *infrastructureName, kubernetesAPIURL)
+	err = r.Client.Get(ctx, *infrastructureName, kubernetesAPIURL)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -128,17 +130,17 @@ func (r *ReconcileStarterKit) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	image := newImageStreamForCR(instance)
 
 	// Set StarterKit instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, image, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(instance, image, r.Scheme); err != nil {
 		reqLogger.Error(err, "Error setting ImageStream on StarterKit")
 		return ctrl.Result{}, err
 	}
 
 	// Check if this Image already exists
 	foundImage := &imagev1.ImageStream{}
-	err = r.client.Get(ctx, types.NamespacedName{Name: image.Name, Namespace: image.Namespace}, foundImage)
+	err = r.Client.Get(ctx, types.NamespacedName{Name: image.Name, Namespace: image.Namespace}, foundImage)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new Image", "Image.Namespace", image.Namespace, "Image.Name", image.Name)
-		err = r.client.Create(ctx, image)
+		err = r.Client.Create(ctx, image)
 		if err != nil {
 			reqLogger.Error(err, "Error creating ImageStream")
 			return ctrl.Result{}, err
@@ -159,17 +161,17 @@ func (r *ReconcileStarterKit) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	route := newRouteForCR(instance)
 
 	// Set StarterKit instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, route, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(instance, route, r.Scheme); err != nil {
 		reqLogger.Error(err, "Error setting Route on StarterKit")
 		return ctrl.Result{}, err
 	}
 
 	// Check if this Route already exists
 	foundRoute := &routev1.Route{}
-	err = r.client.Get(ctx, types.NamespacedName{Name: route.Name, Namespace: route.Namespace}, foundRoute)
+	err = r.Client.Get(ctx, types.NamespacedName{Name: route.Name, Namespace: route.Namespace}, foundRoute)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new Route", "Route.Namespace", route.Namespace, "Route.Name", route.Name)
-		err = r.client.Create(ctx, route)
+		err = r.Client.Create(ctx, route)
 		if err != nil {
 			reqLogger.Error(err, "Error creating Route")
 			return ctrl.Result{}, err
@@ -190,17 +192,17 @@ func (r *ReconcileStarterKit) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	service := newServiceForCR(instance)
 
 	// Set StarterKit instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, service, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(instance, service, r.Scheme); err != nil {
 		reqLogger.Error(err, "Error setting Service on StarterKit")
 		return ctrl.Result{}, err
 	}
 
 	// Check if this Service already exists
 	foundService := &corev1.Service{}
-	err = r.client.Get(ctx, types.NamespacedName{Name: service.Name, Namespace: service.Namespace}, foundService)
+	err = r.Client.Get(ctx, types.NamespacedName{Name: service.Name, Namespace: service.Namespace}, foundService)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new Service", "Service.Namespace", service.Namespace, "Service.Name", service.Name)
-		err = r.client.Create(ctx, service)
+		err = r.Client.Create(ctx, service)
 		if err != nil {
 			reqLogger.Error(err, "Error creating Service")
 			return ctrl.Result{}, err
@@ -226,17 +228,17 @@ func (r *ReconcileStarterKit) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	secret := newSecretForCR(instance, token)
 
 	// Set StarterKit instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, secret, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(instance, secret, r.Scheme); err != nil {
 		reqLogger.Error(err, "Error setting Secret on StarterKit")
 		return ctrl.Result{}, err
 	}
 
 	// Check if this Secret already exists
 	foundSecret := &corev1.Secret{}
-	err = r.client.Get(ctx, types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace}, foundSecret)
+	err = r.Client.Get(ctx, types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace}, foundSecret)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new Secret", "Secret.Namespace", secret.Namespace, "Secret.Name", secret.Name)
-		err = r.client.Create(ctx, secret)
+		err = r.Client.Create(ctx, secret)
 		if err != nil {
 			reqLogger.Error(err, "Error creating Secret")
 			return ctrl.Result{}, err
@@ -257,17 +259,17 @@ func (r *ReconcileStarterKit) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	build := newBuildForCR(instance)
 
 	// Set StarterKit instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, build, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(instance, build, r.Scheme); err != nil {
 		reqLogger.Error(err, "Error setting BuildConfig on StarterKit")
 		return ctrl.Result{}, err
 	}
 
 	// Check if this Build already exists
 	foundBuild := &buildv1.BuildConfig{}
-	err = r.client.Get(ctx, types.NamespacedName{Name: build.Name, Namespace: build.Namespace}, foundBuild)
+	err = r.Client.Get(ctx, types.NamespacedName{Name: build.Name, Namespace: build.Namespace}, foundBuild)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new Build", "Build.Namespace", build.Namespace, "Build.Name", build.Name)
-		err = r.client.Create(ctx, build)
+		err = r.Client.Create(ctx, build)
 		if err != nil {
 			reqLogger.Info("Error creating new Build")
 			return ctrl.Result{}, err
@@ -293,7 +295,7 @@ func (r *ReconcileStarterKit) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}
 		reqLogger.Info("Generated Webhook", "Webhook", githubHook)
 
-		hook := github.Hook{
+		hook := &github.Hook{
 			Config: map[string]interface{}{
 				"content_type": "json",
 				"url":          githubHook.String(),
@@ -301,7 +303,7 @@ func (r *ReconcileStarterKit) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			Events: []string{"push"},
 		}
 
-		createdHook, _, err := client.Repositories.CreateHook(ctx, instance.Spec.TemplateRepo.Owner, instance.Spec.TemplateRepo.Name, &hook)
+		createdHook, _, err := client.Repositories.CreateHook(ctx, instance.Spec.TemplateRepo.Owner, instance.Spec.TemplateRepo.Name, hook)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
@@ -319,17 +321,17 @@ func (r *ReconcileStarterKit) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	deployment := newDeploymentForCR(instance)
 
 	// Set StarterKit instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, deployment, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(instance, deployment, r.Scheme); err != nil {
 		reqLogger.Error(err, "Error setting Deployment on StarterKit")
 		return ctrl.Result{}, err
 	}
 
 	// Check if this Deployment already exists
 	foundDeployment := &appsv1.DeploymentConfig{}
-	err = r.client.Get(ctx, types.NamespacedName{Name: deployment.Name, Namespace: deployment.Namespace}, foundDeployment)
+	err = r.Client.Get(ctx, types.NamespacedName{Name: deployment.Name, Namespace: deployment.Namespace}, foundDeployment)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new Deployment", "Deployment.Namespace", deployment.Namespace, "Deployment.Name", deployment.Name)
-		err = r.client.Create(ctx, deployment)
+		err = r.Client.Create(ctx, deployment)
 		if err != nil {
 			reqLogger.Error(err, "Error creating new DeploymentConfig")
 			return ctrl.Result{}, err
@@ -363,7 +365,7 @@ func (r *ReconcileStarterKit) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			// Remove starterkitFinalizer. Once all finalizers have been
 			// removed, the object will be deleted.
 			controllerutil.RemoveFinalizer(instance, starterkitFinalizer)
-			err := r.client.Update(ctx, instance)
+			err := r.Client.Update(ctx, instance)
 			if err != nil {
 				return ctrl.Result{}, err
 			}
@@ -393,7 +395,7 @@ func (r *ReconcileStarterKit) addFinalizer(reqLogger logr.Logger, s *devxv1alpha
 	controllerutil.AddFinalizer(s, starterkitFinalizer)
 
 	// Update CR
-	err := r.client.Update(context.TODO(), s)
+	err := r.Client.Update(context.TODO(), s)
 	if err != nil {
 		reqLogger.Error(err, "Failed to update StarterKit with finalizer")
 		return err
