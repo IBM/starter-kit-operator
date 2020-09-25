@@ -30,9 +30,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	devxv1alpha1 "github.com/IBM/starter-kit-operator2/api/v1alpha1"
-	"github.com/IBM/starter-kit-operator2/controllers"
-	"github.com/IBM/starter-kit-operator2/controllers/starterkit"
+	devxv1alpha1 "github.com/IBM/starter-kit-operator/api/v1alpha1"
+	"github.com/IBM/starter-kit-operator/controllers"
+	"github.com/IBM/starter-kit-operator/controllers/starterkit"
 	"github.com/rs/zerolog/log"
 	// +kubebuilder:scaffold:imports
 )

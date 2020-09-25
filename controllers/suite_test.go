@@ -30,7 +30,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	devxv1alpha1 "github.com/IBM/starter-kit-operator2/api/v1alpha1"
+	devxv1alpha1 "github.com/IBM/starter-kit-operator/api/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
 
