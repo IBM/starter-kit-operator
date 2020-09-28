@@ -7,8 +7,6 @@ name: CD
 on:
   push:
     branches: [ master ]
-  pull_request:
-    branches: [ ]
   workflow_dispatch:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
@@ -19,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      IMAGE_NAME: nfstein/starter-kit-operator
+      IMAGE_NAME: ibmcom/starter-kit-operator
       IMAGE_TAG_PREFIX: 0.1.
     
     # Steps represent a sequence of tasks that will be executed as part of the job
