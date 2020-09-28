@@ -277,6 +277,16 @@ func newDeploymentForCR(cr *devxv1alpha1.StarterKit) *appsv1.DeploymentConfig {
 		port = cr.Spec.Options.Port
 	}
 	env := cr.Spec.Options.Env
+	// needed to install additional resources at operator install time
+	namespaceEnv := corev1.EnvVar{
+		Name: "WATCH_NAMESPACE",
+		ValueFrom: &corev1.EnvVarSource{
+			FieldRef: &corev1.ObjectFieldSelector{
+				FieldPath: "metadata.annotations['olm.targetNamespaces']",
+			},
+		},
+	}
+	env = append(env, namespaceEnv)
 
 	return &appsv1.DeploymentConfig{
 		TypeMeta: metav1.TypeMeta{
