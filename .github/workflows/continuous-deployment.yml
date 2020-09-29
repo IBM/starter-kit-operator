@@ -17,8 +17,10 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      IMAGE_NAME: ibmcom/starter-kit-operator
+	  IMAGE_NS: ibmcom
+      IMAGE_NAME: starter-kit-operator
       IMAGE_TAG_PREFIX: 0.1.
+	  IC_CR_NS: devex-ibmcom
     
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -41,10 +43,10 @@ jobs:
       - name: operator-sdk build image
         run: |
           cd $GITHUB_WORKSPACE
-          operator-sdk build $IMAGE_NAME:$IMAGE_TAG_PREFIX$GITHUB_RUN_NUMBER
+          operator-sdk build $IMAGE_NS/$IMAGE_NAME:$IMAGE_TAG_PREFIX$GITHUB_RUN_NUMBER
           
           echo ==================================
-          echo built $IMAGE_NAME:$IMAGE_TAG_PREFIX$GITHUB_RUN_NUMBER
+          echo built $IMAGE_NS/$IMAGE_NAME:$IMAGE_TAG_PREFIX$GITHUB_RUN_NUMBER
           echo ==================================
 
        
@@ -52,9 +54,11 @@ jobs:
         run: |
           # # add ibmcloud secrets to repo
           # install ibm cli
-          # login
-          # push image to <region>.icr.io/$IMAGE_NAME:$IMAGE_TAG_PREFIX$GITHUB_RUN_NUMBER
-          # ibmcloud cr va <region>.icr.io/$IMAGE_NAME:$IMAGE_TAG_PREFIX$GITHUB_RUN_NUMBER
+          # ibmcloud login --apikey $APIKEY
+	      # docker tag $IMAGE_NS/$IMAGE_NAME:$TAG us.icr.io/$IC_CR_NS/$IMAGE_NAME:$TAG
+		  # ibmcloud cr login
+		  # docker push us.icr.io/$IC_CR_NS/$IMAGE_NAME:$TAG
+		  # ibmcloud cr va us.icr.io/$IC_CR_NS/$IMAGE_NAME:$TAG
           echo TODO no vulnerability scan yet
           
       - name: push image
@@ -63,10 +67,10 @@ jobs:
           DOCKER_PASS: ${{ secrets.DOCKER_PASS }}
         run: |
           echo $DOCKER_PASS | docker login --username=$DOCKER_USER --password-stdin
-          docker push $IMAGE_NAME:$IMAGE_TAG_PREFIX$GITHUB_RUN_NUMBER
+          docker push $IMAGE_NS/$IMAGE_NAME:$IMAGE_TAG_PREFIX$GITHUB_RUN_NUMBER
           
           echo ==================================
-          echo pushed $IMAGE_NAME:$IMAGE_TAG_PREFIX$GITHUB_RUN_NUMBER
+          echo pushed $IMAGE_NS/$IMAGE_NAME:$IMAGE_TAG_PREFIX$GITHUB_RUN_NUMBER
           echo ==================================
 
 
