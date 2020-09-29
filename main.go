@@ -38,7 +38,11 @@ import (
 	devxv1alpha1 "github.com/IBM/starter-kit-operator/api/v1alpha1"
 	"github.com/IBM/starter-kit-operator/controllers"
 
+	appsv1 "github.com/openshift/api/apps/v1"
+	buildv1 "github.com/openshift/api/build/v1"
+	configv1 "github.com/openshift/api/config/v1"
 	consolev1 "github.com/openshift/api/console/v1"
+	imagev1 "github.com/openshift/api/image/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	consolev1client "github.com/openshift/client-go/console/clientset/versioned/typed/console/v1"
 	routev1client "github.com/openshift/client-go/route/clientset/versioned/typed/route/v1"
@@ -54,6 +58,11 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(devxv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(configv1.AddToScheme(scheme))
+	utilruntime.Must(imagev1.AddToScheme(scheme))
+	utilruntime.Must(routev1.AddToScheme(scheme))
+	utilruntime.Must(buildv1.AddToScheme(scheme))
+	utilruntime.Must(appsv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -92,7 +101,8 @@ func main() {
 	// +kubebuilder:scaffold:builder
 
 	// ========================================================================
-	namespace, err := getWatchNamespace()
+	namespace, err := getMyNamespace()
+	ctrlLog.Info("Using namespace " + namespace)
 	if disableUI, ok := os.LookupEnv("DISABLE_SKIT_OPERATOR_UI"); ok {
 		if disableUI == "true" {
 			ctrlLog.Info("The UI for the Starter Kit Operator will not be installed")
@@ -104,7 +114,7 @@ func main() {
 		consolev1client := consolev1client.NewForConfigOrDie(mgr.GetConfig())
 		// Set operator deployment instance as the owner and controller of all resources so that they get deleted when the operator is uninstalled
 		operatorDeployment := &coreappsv1.Deployment{}
-		operatorDeployment, err = coreclient.AppsV1().Deployments(namespace).Get(context.Background(), "starter-kit-operator", metav1.GetOptions{})
+		operatorDeployment, err = coreclient.AppsV1().Deployments(namespace).Get(context.Background(), "starter-kit-operator-controller-manager", metav1.GetOptions{})
 		if err != nil && errors.IsNotFound(err) {
 			ctrlLog.Error(err, "Could not find Operator Deployment")
 		}

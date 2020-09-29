@@ -5,7 +5,7 @@ metadata:
   name: starterkit-viewer-role
 rules:
 - apiGroups:
-  - devx.my.domain
+  - devx.ibm.com
   resources:
   - starterkits
   verbs:
@@ -13,7 +13,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - devx.my.domain
+  - devx.ibm.com
   resources:
   - starterkits/status
   verbs:

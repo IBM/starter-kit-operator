@@ -286,7 +286,16 @@ func newDeploymentForCR(cr *devxv1alpha1.StarterKit) *appsv1.DeploymentConfig {
 			},
 		},
 	}
+	myNamespaceEnv := corev1.EnvVar{
+		Name: "MY_NAMESPACE",
+		ValueFrom: &corev1.EnvVarSource{
+			FieldRef: &corev1.ObjectFieldSelector{
+				FieldPath: "metadata.namespace",
+			},
+		},
+	}
 	env = append(env, namespaceEnv)
+	env = append(env, myNamespaceEnv)
 
 	return &appsv1.DeploymentConfig{
 		TypeMeta: metav1.TypeMeta{

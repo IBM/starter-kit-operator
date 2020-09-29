@@ -1,4 +1,6 @@
 ## Append samples you want in your CSV to this file as resources ##
 resources:
-- devx_v1alpha1_starterkit.yaml
+- devx.ibm.com_v1alpha1_StarterKit_java-spring-app.yaml
+- devx.ibm.com_v1alpha1_StarterKit_node-express-app.yaml
+- devx.ibm.com_v1alpha1_StarterKit_speech-to-text-nodejs-app.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples
