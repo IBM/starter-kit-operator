@@ -55,11 +55,11 @@ jobs:
           # # add ibmcloud secrets to repo
           # install ibm cli
           # ibmcloud login --apikey $APIKEY
-	  # docker tag $IMAGE_NS/$IMAGE_NAME:$TAG us.icr.io/$IC_CR_NS/$IMAGE_NAME:$TAG
-	  # ibmcloud cr login
-	  # docker push us.icr.io/$IC_CR_NS/$IMAGE_NAME:$TAG
-	  # ibmcloud cr va us.icr.io/$IC_CR_NS/$IMAGE_NAME:$TAG
-	  echo TODO no vulnerability scan yet
+          # docker tag $IMAGE_NS/$IMAGE_NAME:$TAG us.icr.io/$IC_CR_NS/$IMAGE_NAME:$TAG
+          # ibmcloud cr login
+          # docker push us.icr.io/$IC_CR_NS/$IMAGE_NAME:$TAG
+          # ibmcloud cr va us.icr.io/$IC_CR_NS/$IMAGE_NAME:$TAG
+          echo TODO no vulnerability scan yet
 
       - name: push image
         env:
