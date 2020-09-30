@@ -4,14 +4,12 @@ go 1.13
 
 require (
 	github.com/go-logr/logr v0.2.1
-	github.com/google/go-github/v32 v32.1.0
+	github.com/google/go-github/v32 v32.0.0
 	github.com/onsi/ginkgo v1.12.1
 	github.com/onsi/gomega v1.10.1
 	github.com/openshift/api v0.0.0-20200326152221-912866ddb162
 	github.com/openshift/client-go v0.0.0-20200422192633-6f6c07fc2a70
-	github.com/operator-framework/operator-sdk v1.0.1
 	github.com/prometheus/client_golang v1.5.1 // indirect
-	github.com/rs/zerolog v1.20.0
 	github.com/stretchr/testify v1.5.1 // indirect
 	golang.org/x/oauth2 v0.0.0-20191202225959-858c2ad4c8b6
 	golang.org/x/sys v0.0.0-20200803150936-fd5f0c170ac3 // indirect
