@@ -423,6 +423,7 @@ func (r *ReconcileStarterKit) finalizeStarterKit(reqLogger logr.Logger, request 
 	return nil
 }
 
+// SetupWithManager set up the controller with the specified manager
 func (r *ReconcileStarterKit) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&devxv1alpha1.StarterKit{}).

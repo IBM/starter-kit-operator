@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/go-logr/logr v0.2.1
+	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/google/go-github/v32 v32.0.0
 	github.com/onsi/ginkgo v1.12.1
 	github.com/onsi/gomega v1.10.1
@@ -11,8 +12,9 @@ require (
 	github.com/openshift/client-go v0.0.0-20200422192633-6f6c07fc2a70
 	github.com/prometheus/client_golang v1.5.1 // indirect
 	github.com/stretchr/testify v1.5.1 // indirect
-	golang.org/x/oauth2 v0.0.0-20191202225959-858c2ad4c8b6
+	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sys v0.0.0-20200803150936-fd5f0c170ac3 // indirect
+	google.golang.org/appengine v1.6.6 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
 	k8s.io/api v0.19.0
 	k8s.io/apimachinery v0.19.0
