@@ -1,0 +1,77 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CD
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    env:
+      IMAGE_NS: ibmcom
+      IMAGE_NAME: starter-kit-operator
+      IMAGE_TAG_PREFIX: 0.1.
+      IC_CR_NS: devex-ibmcom
+    
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      - name: Setup Go environment
+        uses: actions/setup-go@v2.1.2
+
+      - name: Install operator-sdk
+        env: 
+          SDK_RELEASE_VERSION: "v0.15.0"
+        run: |
+          curl -OJL https://github.com/operator-framework/operator-sdk/releases/download/${SDK_RELEASE_VERSION}/operator-sdk-${SDK_RELEASE_VERSION}-x86_64-linux-gnu
+          echo TODO we should verify the release binary https://docs.openshift.com/container-platform/4.3/operators/operator_sdk/osdk-getting-started.html
+          chmod +x operator-sdk-${SDK_RELEASE_VERSION}-x86_64-linux-gnu
+          sudo cp operator-sdk-${SDK_RELEASE_VERSION}-x86_64-linux-gnu /usr/local/bin/operator-sdk
+          rm operator-sdk-${SDK_RELEASE_VERSION}-x86_64-linux-gnu
+
+      - name: operator-sdk build image
+        run: |
+          cd $GITHUB_WORKSPACE
+          operator-sdk build $IMAGE_NS/$IMAGE_NAME:$IMAGE_TAG_PREFIX$GITHUB_RUN_NUMBER
+          
+          echo ==================================
+          echo built $IMAGE_NS/$IMAGE_NAME:$IMAGE_TAG_PREFIX$GITHUB_RUN_NUMBER
+          echo ==================================
+
+       
+      - name: TODO ibm vulnerability advisor
+        run: |
+          # # add ibmcloud secrets to repo
+          # install ibm cli
+          # ibmcloud login --apikey $APIKEY
+          # docker tag $IMAGE_NS/$IMAGE_NAME:$TAG us.icr.io/$IC_CR_NS/$IMAGE_NAME:$TAG
+          # ibmcloud cr login
+          # docker push us.icr.io/$IC_CR_NS/$IMAGE_NAME:$TAG
+          # ibmcloud cr va us.icr.io/$IC_CR_NS/$IMAGE_NAME:$TAG
+          echo TODO no vulnerability scan yet
+
+      - name: push image
+        env:
+          DOCKER_USER: ${{ secrets.DOCKER_USER }}
+          DOCKER_PASS: ${{ secrets.DOCKER_PASS }}
+        run: |
+          echo $DOCKER_PASS | docker login --username=$DOCKER_USER --password-stdin
+          docker push $IMAGE_NS/$IMAGE_NAME:$IMAGE_TAG_PREFIX$GITHUB_RUN_NUMBER
+          
+          echo ==================================
+          echo pushed $IMAGE_NS/$IMAGE_NAME:$IMAGE_TAG_PREFIX$GITHUB_RUN_NUMBER
+          echo ==================================
+
+
+        
