@@ -24,7 +24,7 @@ IBM Starter Kits provide a quick starting point for various different applicatio
 
 ## Pre-requisites
 
-* Red Hat OpenShift Cluster
+* Red Hat OpenShift Cluster. Non-OpenShift Kubernetes clusters are not supported.
 * It is recommended to install the [IBM Cloud Operator](https://operatorhub.io/operator/ibmcloud-operator) before installing this operator. You will need it to provision the `Service` and `Binding` CRDs that some of the examples reference.
 
 ## Installation
