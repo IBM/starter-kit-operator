@@ -6,7 +6,7 @@ FORK=${FORK:=https://github.com/nfstein/community-operators}
 echo Image tags in remote repository $IMAGE:
 wget -q https://registry.hub.docker.com/v1/repositories/$IMAGE/tags -O - | jq -c .[].name
 
-read -p "Enter tag for image $IMAGE (no quotes) e.g. 0.0.0 : " TAG
+read -p "Enter tag for image $IMAGE (no quotes) e.g. 0.0.0 : " OPERATOR_IMAGE_TAG
 
 GITHUB_WORKSPACE=$(pwd)
 
