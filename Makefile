@@ -1,131 +1,119 @@
-.DEFAULT_GOAL:=help
-SHELL:=/bin/bash
+# Current Operator version
+VERSION ?= 0.0.1
+# Default bundle image tag
+BUNDLE_IMG ?= controller-bundle:$(VERSION)
+# Options for 'bundle-build'
+ifneq ($(origin CHANNELS), undefined)
+BUNDLE_CHANNELS := --channels=$(CHANNELS)
+endif
+ifneq ($(origin DEFAULT_CHANNEL), undefined)
+BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
+endif
+BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
-## These can passed as NAME=VALUE pairs to the make command to change them
-NAMESPACE=starterkit
-SKIT=java-spring-app.yaml
-SKIT_NAME=java-spring-app
-SKIT_OWNER=gh-username
-SKIT_DESCRIPTION=example code pattern
-SKIT_SECRET_KEY_REF_NAME=my-github-token
-SKIT_SECRET_KEY_REF_KEY=apikey
-SKIT_DEPLOYMENT_IMAGE=ibmcom/starter-kit-operator:0.1.0
+# Image URL to use all building/pushing image targets
+IMG ?= controller:latest
+# Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
+CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
-##@ Application
+# Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
+ifeq (,$(shell go env GOBIN))
+GOBIN=$(shell go env GOPATH)/bin
+else
+GOBIN=$(shell go env GOBIN)
+endif
 
-build-image: ## Build and push the operator image. Parameters: NAMESPACE, SKIT_DEPLOYMENT_IMAGE
-	@echo Switching to project ${NAMESPACE}
-	- oc project ${NAMESPACE}
-	@ echo Building image
-	- operator-sdk build "${SKIT_DEPLOYMENT_IMAGE}"
-	- docker push "${SKIT_DEPLOYMENT_IMAGE}"
+all: manager
 
-install-local: ## Install resources needed to run the operator locally. Parameters: NAMESPACE
-	@echo Switching to project ${NAMESPACE}
-	- oc project ${NAMESPACE}
-	@echo ....... Applying CRDs .......
-	- oc apply -f deploy/crds/devx.ibm.com_starterkits_crd.yaml
+# Run tests
+ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
+test: generate fmt vet manifests
+	mkdir -p ${ENVTEST_ASSETS_DIR}
+	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.7.0/hack/setup-envtest.sh
+	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
 
-install: ## Install all resources for deployment (CR/CRD's, RBAC and Operator). Requires the yq commandline tool.  Parameters: NAMESPACE, SKIT_DEPLOYMENT_IMAGE
-	@echo Switching to project ${NAMESPACE}
-	- oc project ${NAMESPACE}
-	@echo ....... Applying CRDs .......
-	- oc apply -f deploy/crds/devx.ibm.com_starterkits_crd.yaml
-	@echo ....... Applying Rules and Service Account .......
-	- oc apply -f deploy/role.yaml
-	- yq w deploy/role_binding.yaml "subjects[0].namespace" "${NAMESPACE}" | oc apply -f - 
-	- oc apply -f deploy/service_account.yaml
-	@echo ....... Applying Operator .......
-	- yq w deploy/operator.yaml "spec.template.spec.containers[0].image" "${SKIT_DEPLOYMENT_IMAGE}" | oc apply -f - 
+# Build manager binary
+manager: generate fmt vet
+	go build -o bin/manager main.go
 
-install-csv: ## Install all resources for deployment using the latest Cluster Service Version file. Requires the yq commandline tool.  Parameters: NAMESPACE
-	@echo Switching to project ${NAMESPACE}
-	- oc project ${NAMESPACE}
-	- yq w olm/0.2.0/starter-kit-operator.v0.2.0.clusterserviceversion.yaml "metadata.namespace" "${NAMESPACE}" | oc apply -f - 
+# Run against the configured Kubernetes cluster in ~/.kube/config
+run: generate fmt vet manifests
+	go run ./main.go
 
-uninstall: ## Uninstall all that are performed in the install. Parameters: NAMESPACE
-	@echo Switching to project ${NAMESPACE}
-	- oc project ${NAMESPACE}
-	@echo ....... Uninstalling .......
-	@echo ....... Deleting CRDs.......
-	- oc delete -f deploy/crds/devx.ibm.com_starterkits_crd.yaml
-	@echo ....... Deleting Rules and Service Account .......
-	- oc delete -f deploy/role.yaml
-	- oc delete -f deploy/role_binding.yaml
-	- oc delete -f deploy/service_account.yaml
-	@echo ....... Deleting Operator .......
-	- oc delete -f deploy/operator.yaml
+# Install CRDs into a cluster
+install: manifests kustomize
+	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
-run-local: ## Run the operator locally. Parameters: NAMESPACE
-	@echo ....... Starting the operator with namespace ${NAMESPACE} .......
-	- operator-sdk run local --watch-namespace ${NAMESPACE}
+# Uninstall CRDs from a cluster
+uninstall: manifests kustomize
+	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
-run-debug: ## Run the operator locally in debug mode (enable-delve option). Parameters: NAMESPACE
-	# make sure you install github.com/go-delve/delve
-	# add a 'Go: attach to process' debug config to your launch.json for vscode
-	# run the operator with run-debug and run the vscode attach debugger
-	@echo ....... Starting the operator in debug mode with namespace ${NAMESPACE} .......
-	- operator-sdk run local --watch-namespace ${NAMESPACE} --enable-delve
+# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
+deploy: manifests kustomize
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
-install-skit: ## Install a starter kit from the examples folder. Requires the yq command line tool. Parameters: NAMESPACE, SKIT, SKIT_NAME, SKIT_OWNER, SKIT_DESCRIPTION, SKIT_SECRET_KEY_REF_NAME, SKIT_SECRET_KEY_REF_KEY
-	@echo Switching to project ${NAMESPACE}
-	- oc project ${NAMESPACE}
-	@echo ....... Installing examples/${SKIT} .......
-	- yq w examples/${SKIT} "spec.templateRepo.name" "${SKIT_NAME}" | yq w - "spec.templateRepo.owner" "${SKIT_OWNER}" | yq w - "spec.templateRepo.repoDescription" "${SKIT_DESCRIPTION}" | yq w - "spec.templateRepo.secretKeyRef.name" "${SKIT_SECRET_KEY_REF_NAME}" | yq w - "spec.templateRepo.secretKeyRef.key" "${SKIT_SECRET_KEY_REF_KEY}" | oc apply -f - 
+# UnDeploy controller from the configured Kubernetes cluster in ~/.kube/config
+undeploy:
+	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
-delete-skit: ## Deletes a starter kit defined in the examples folder. Parameters: NAMESPACE, SKIT
-	@echo Switching to project ${NAMESPACE}
-	- oc project ${NAMESPACE}
-	@echo ....... Deleting examples/${SKIT} .......
-	- oc delete -f examples/${SKIT}
+# Generate manifests e.g. CRD, RBAC etc.
+manifests: controller-gen
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
-##@ Development
+# Run go fmt against code
+fmt:
+	go fmt ./...
 
-code-vet: ## Run go vet for this project. More info: https://golang.org/cmd/vet/
-	@echo go vet
-	go vet $$(go list ./... )
+# Run go vet against code
+vet:
+	go vet ./...
 
-code-fmt: ## Run go fmt for this project
-	@echo go fmt
-	go fmt $$(go list ./... )
+# Generate code
+generate: controller-gen
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
-code-dev: ## Run the default dev commands which are the go fmt and vet then execute the $ make code-gen
-	@echo Running the common required commands for developments purposes
-	- make code-fmt
-	- make code-vet
-	- make code-gen
+# Build the docker image
+docker-build: test
+	docker build -t ${IMG} .
 
-code-gen: ## Run the operator-sdk commands to generated code (k8s and openapi)
-	@echo Updating the deep copy files with the changes in the API
-	operator-sdk generate k8s
-	@echo Updating the CRD files with the OpenAPI validations
-	operator-sdk generate openapi
+# Push the docker image
+docker-push:
+	docker push ${IMG}
 
-##@ Tests
+# Download controller-gen locally if necessary
+CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
+controller-gen:
+	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1)
 
-# test-unit: ## Run unit tests
-# 	@echo Running unit tests
-# 	go test ./pkg/controller/starterkit
+# Download kustomize locally if necessary
+KUSTOMIZE = $(shell pwd)/bin/kustomize
+kustomize:
+	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
 
-# test-e2e: ## Run integration e2e tests with different options.
-# 	@echo ... Running the same e2e tests with different args ...
-# 	@echo ... Running locally ...
-# 	- kubectl create namespace ${NAMESPACE} || true
-# 	- operator-sdk test local ./test/e2e --up-local --namespace=${NAMESPACE}
-# 	@echo ... Running NOT in parallel ...
-# 	- operator-sdk test local ./test/e2e --go-test-flags "-v -parallel=1"
-# 	@echo ... Running in parallel ...
-# 	- operator-sdk test local ./test/e2e --go-test-flags "-v -parallel=2"
-# 	@echo ... Running without options/args ...
-# 	- operator-sdk test local ./test/e2e
-# 	@echo ... Running with the --debug param ...
-# 	- operator-sdk test local ./test/e2e --debug
-# 	@echo ... Running with the --verbose param ...
-# 	- operator-sdk test local ./test/e2e --verbose
+# go-get-tool will 'go get' any package $2 and install it to $1.
+PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
+define go-get-tool
+@[ -f $(1) ] || { \
+set -e ;\
+TMP_DIR=$$(mktemp -d) ;\
+cd $$TMP_DIR ;\
+go mod init tmp ;\
+echo "Downloading $(2)" ;\
+GOBIN=$(PROJECT_DIR)/bin go get $(2) ;\
+rm -rf $$TMP_DIR ;\
+}
+endef
 
-.PHONY: help
-help: ## Display this help
-	@echo -e "Usage:\n  make \033[36m<target>\033[0m"
-	@awk 'BEGIN {FS = ":.*##"}; \
-		/^[a-zA-Z0-9_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } \
-		/^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+# Generate bundle manifests and metadata, then validate generated files.
+.PHONY: bundle
+bundle: manifests kustomize
+	operator-sdk generate kustomize manifests -q
+	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
+	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	operator-sdk bundle validate ./bundle
+
+# Build the bundle image.
+.PHONY: bundle-build
+bundle-build:
+	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
