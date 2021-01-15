@@ -19,7 +19,9 @@ package main
 import (
 	"context"
 	"flag"
+	"io/ioutil"
 	"os"
+	"strings"
 
 	appsv1 "github.com/openshift/api/apps/v1"
 	buildv1 "github.com/openshift/api/build/v1"
@@ -43,7 +45,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -90,11 +91,13 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
-	clientCfg, _ := clientcmd.NewDefaultClientConfigLoadingRules().Load()
-	namespace := clientCfg.Contexts[clientCfg.CurrentContext].Namespace
-	if namespace == "" {
-		namespace = "default"
+	namespaceBytes, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+	if err != nil {
+		setupLog.Error(err, "Failed to get namespace")
+		os.Exit(1)
 	}
+	namespace := strings.TrimSpace(string(namespaceBytes))
+	setupLog.Info(namespace)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,

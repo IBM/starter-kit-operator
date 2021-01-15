@@ -2,34 +2,32 @@ apiVersion: v1
 kind: Namespace
 metadata:
   labels:
-    control-plane: controller-manager
+    control-plane: starter-kit-operator
   name: system
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: controller-manager
+  name: starter-kit-operator
   namespace: system
   labels:
-    control-plane: controller-manager
+    control-plane: starter-kit-operator
 spec:
   selector:
     matchLabels:
-      control-plane: controller-manager
+      control-plane: starter-kit-operator
   replicas: 1
   template:
     metadata:
       labels:
-        control-plane: controller-manager
+        control-plane: starter-kit-operator
     spec:
-      securityContext:
-        runAsUser: 65532
       containers:
       - command:
         - /manager
         args:
         - --leader-elect
-        image: controller:latest
+        image: jmeis/controller:latest
         name: manager
         securityContext:
           allowPrivilegeEscalation: false
@@ -45,11 +43,4 @@ spec:
             port: 8081
           initialDelaySeconds: 5
           periodSeconds: 10
-        resources:
-          limits:
-            cpu: 100m
-            memory: 30Mi
-          requests:
-            cpu: 100m
-            memory: 20Mi
       terminationGracePeriodSeconds: 10
