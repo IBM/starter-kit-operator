@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: starter-kit-operator
+  name: system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: starter-kit-operator
+  namespace: system
+  labels:
+    control-plane: starter-kit-operator
+spec:
+  selector:
+    matchLabels:
+      control-plane: starter-kit-operator
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        control-plane: starter-kit-operator
+    spec:
+      containers:
+      - command:
+        - /manager
+        args:
+        - --leader-elect
+        image: jmeis/controller:latest
+        name: manager
+        securityContext:
+          allowPrivilegeEscalation: false
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      terminationGracePeriodSeconds: 10
