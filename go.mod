@@ -9,9 +9,9 @@ require (
 	github.com/onsi/gomega v1.10.2
 	github.com/openshift/api v0.0.0-20200623075207-eb651a5bb0ad
 	github.com/openshift/client-go v0.0.0-20200422192633-6f6c07fc2a70
-	golang.org/x/oauth2 v0.0.0-20191202225959-858c2ad4c8b6
-	k8s.io/api v0.19.2
+	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
+	k8s.io/api v0.22.2
 	k8s.io/apimachinery v0.22.2
-	k8s.io/client-go v0.19.2
+	k8s.io/client-go v0.22.2
 	sigs.k8s.io/controller-runtime v0.7.0
 )
