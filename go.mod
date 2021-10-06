@@ -6,7 +6,7 @@ require (
 	github.com/go-logr/logr v0.4.0
 	github.com/google/go-github/v32 v32.1.0
 	github.com/onsi/ginkgo v1.16.4
-	github.com/onsi/gomega v1.15.0
+	github.com/onsi/gomega v1.16.0
 	github.com/openshift/api v0.0.0-20200623075207-eb651a5bb0ad
 	github.com/openshift/client-go v0.0.0-20200422192633-6f6c07fc2a70
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
