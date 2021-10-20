@@ -5,6 +5,7 @@ go 1.15
 require (
 	github.com/go-logr/logr v0.4.0
 	github.com/google/go-github/v39 v39.2.0
+	github.com/miekg/dns v1.1.43 // indirect
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.16.0
 	github.com/openshift/api v0.0.0-20200623075207-eb651a5bb0ad
