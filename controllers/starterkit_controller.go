@@ -20,7 +20,7 @@ import (
 	"context"
 	"os"
 
-	"github.com/google/go-github/v32/github"
+	"github.com/google/go-github/v39/github"
 
 	appsv1 "github.com/openshift/api/apps/v1"
 	buildv1 "github.com/openshift/api/build/v1"

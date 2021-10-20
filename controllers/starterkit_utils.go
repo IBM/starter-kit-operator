@@ -22,7 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/google/go-github/v32/github"
+	"github.com/google/go-github/v39/github"
 )
 
 // Returns the GitHub secret defined in the specified StarterKit.
